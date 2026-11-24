@@ -172,3 +172,4 @@ def api_esporta(sezione, formato):
     r = current_app.response_class(buf.getvalue(), mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
     r.headers['Content-Disposition'] = f'attachment; filename="{nome_file}.xlsx"'
     return r
+
