@@ -111,12 +111,6 @@ def bilancio_anno(anno):
     # 4) ALTRO - uscite generiche dell'anno
     altro_voci = []
     altro_tot = 0
-    for o in d.get('inventario', []):
-        a = _anno_da_data(o.get('data_acquisto') or o.get('data'))
-        if a: anni.add(a)
-    for e in d.get('entita', []):
-        a = _anno_da_data(e.get('data_carico') or e.get('data'))
-        if a: anni.add(a)
     for idx_u, u in enumerate(d.get('uscite', [])):
         if _anno_da_data(u.get('data')) != anno_str:
             continue
@@ -193,12 +187,6 @@ def bilancio_tutti_anni():
         a = _anno_da_data(e.get('data'))
         if a: anni.add(a)
 
-    for o in d.get('inventario', []):
-        a = _anno_da_data(o.get('data_acquisto') or o.get('data'))
-        if a: anni.add(a)
-    for e in d.get('entita', []):
-        a = _anno_da_data(e.get('data_carico') or e.get('data'))
-        if a: anni.add(a)
     for idx_u, u in enumerate(d.get('uscite', [])):
         a = _anno_da_data(u.get('data'))
         if a: anni.add(a)
@@ -332,4 +320,5 @@ def elimina_voce_bilancio(ref):
                 if str(ev.get('id')) == str(item.get('evento_id')): ev['pagato'] = False
         lst.pop(i)
     storage.salva()
+
 
