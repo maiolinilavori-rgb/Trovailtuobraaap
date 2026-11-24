@@ -1,4 +1,4 @@
-from __future__ import annotations
+﻿from __future__ import annotations
 from app import storage
 from flask import Blueprint, request, jsonify, session, redirect, url_for, render_template_string
 from datetime import datetime, timedelta
@@ -378,7 +378,7 @@ button:hover::after { left: 100%; }
         <label>Utente</label>
         <div class="input-wrap">
           <span class="icon">&#128100;</span>
-          <input type="text" name="utente" autofocus required value="admin" autocomplete="username">
+          <input type="text" name="utente" autofocus required placeholder="Nome utente" autocomplete="username">
         </div>
         <label>Password</label>
         <div class="input-wrap">
@@ -387,12 +387,11 @@ button:hover::after { left: 100%; }
         </div>
         <button type="submit">Accedi &rarr;</button>
       </form>
-      <div class="hint">
-        Credenziali di default: <strong>admin</strong> / <strong>braaap2026</strong>
-      </div>
+      
     </div>
 
     <div class="footer">TROVA IL TUO BRAAAP &middot; 2026</div>
   </div>
 </body>
 </html>"""
+
