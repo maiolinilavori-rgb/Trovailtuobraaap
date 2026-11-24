@@ -163,7 +163,7 @@
   (function(){
     function addSmartBtn(){
       if(document.getElementById('btnSmartExport'))return;
-      var bar=document.querySelector('.top-actions, header .actions, .header-right, #headerActions')||document.querySelector('header');
+      var lo=document.querySelector('a[href*="logout"]');var bar=lo?lo.parentElement:(document.querySelector('.top-actions, .header-actions, .topbar, nav, header'));
       if(!bar)return;
       var b=document.createElement('button');
       b.id='btnSmartExport';
@@ -172,9 +172,10 @@
       b.title='Scarica Excel multi-foglio con KPI, Bilancio Annuale, Margini Eventi e Patrimonio';
       b.style.cssText='background:linear-gradient(135deg,#0288D1,#0277BD);color:#fff;border:none;padding:7px 13px;border-radius:8px;font-weight:700;font-size:12px;cursor:pointer;margin-left:8px;box-shadow:0 2px 6px rgba(2,136,209,.3)';
       b.onclick=window.esportaIntelligente;
-      bar.appendChild(b);
+      if(lo&&lo.parentElement===bar)bar.insertBefore(b,lo);else bar.appendChild(b);
     }
     if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',addSmartBtn);
     else addSmartBtn();
     setTimeout(addSmartBtn,600);
   })();
+
