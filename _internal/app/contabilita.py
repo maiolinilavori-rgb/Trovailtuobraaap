@@ -1,4 +1,4 @@
-"""Logica del bilancio annuale - entrate/uscite senza doppioni."""
+﻿"""Logica del bilancio annuale - entrate/uscite senza doppioni."""
 from __future__ import annotations
 from datetime import datetime
 from collections import defaultdict
@@ -69,19 +69,12 @@ def bilancio_anno(anno):
     for idx_o, o in enumerate(d.get('inventario', [])):
         data = o.get('data_acquisto') or o.get('data') or ''
         if _anno_da_data(data) != anno_str:
-            # Se non ha data, considera l'anno corrente di default
-            if not data:
-                # includi solo se non ha data (fallback)
-                data = datetime.now().strftime('%Y-%m-%d')
-                if _anno_da_data(data) != anno_str:
-                    continue
-            else:
-                continue
+            continue
         q = _f(o.get('quantita'), 1)
         vu = _f(o.get('valore_unitario'), 0)
         if vu == 0 and o.get('valore') is not None:
             vu = _f(o.get('valore'))
-        val = q * vu
+        val = _f(o.get('importo_forzato'), q * vu) if o.get('importo_forzato') is not None else (q * vu)
         if val != 0:
             inventario_voci.append({
                 '_ref': {'fonte': 'inventario', 'id': o.get('id'), 'idx': idx_o},
@@ -102,7 +95,7 @@ def bilancio_anno(anno):
             continue
         q = int(e.get('quantita', 0) or 0)
         cu = _f(e.get('costo_unitario'), 0)
-        val = q * cu
+        val = _f(e.get('importo_forzato'), q * cu) if e.get('importo_forzato') is not None else (q * cu)
         if val != 0:
             materiali_voci.append({
                 '_ref': {'fonte': 'materiali', 'id': e.get('id'), 'idx': idx_e},
@@ -118,6 +111,12 @@ def bilancio_anno(anno):
     # 4) ALTRO - uscite generiche dell'anno
     altro_voci = []
     altro_tot = 0
+    for o in d.get('inventario', []):
+        a = _anno_da_data(o.get('data_acquisto') or o.get('data'))
+        if a: anni.add(a)
+    for e in d.get('entita', []):
+        a = _anno_da_data(e.get('data_carico') or e.get('data'))
+        if a: anni.add(a)
     for idx_u, u in enumerate(d.get('uscite', [])):
         if _anno_da_data(u.get('data')) != anno_str:
             continue
@@ -194,6 +193,12 @@ def bilancio_tutti_anni():
         a = _anno_da_data(e.get('data'))
         if a: anni.add(a)
 
+    for o in d.get('inventario', []):
+        a = _anno_da_data(o.get('data_acquisto') or o.get('data'))
+        if a: anni.add(a)
+    for e in d.get('entita', []):
+        a = _anno_da_data(e.get('data_carico') or e.get('data'))
+        if a: anni.add(a)
     for idx_u, u in enumerate(d.get('uscite', [])):
         a = _anno_da_data(u.get('data'))
         if a: anni.add(a)
@@ -327,3 +332,4 @@ def elimina_voce_bilancio(ref):
                 if str(ev.get('id')) == str(item.get('evento_id')): ev['pagato'] = False
         lst.pop(i)
     storage.salva()
+

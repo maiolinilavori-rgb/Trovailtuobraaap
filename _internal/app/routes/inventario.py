@@ -1,16 +1,25 @@
-from __future__ import annotations
+﻿from __future__ import annotations
 from datetime import datetime
 from flask import Blueprint, request, jsonify
 from app import storage
 from app.auth import login_required
 from app.utils import _nuovo_id, _intero
 
+
+def _num(v, default=0.0):
+    try:
+        return float(v) if v not in (None, '') else default
+    except (TypeError, ValueError):
+        return default
+
+
 bp = Blueprint('inventario', __name__, url_prefix='/api/inventario')
 
 
 def _normalizza_oggetto(o: dict) -> dict:
-    q = float(o.get('quantita') if o.get('quantita') is not None else 1)
-    vu = float(o.get('valore_unitario') if o.get('valore_unitario') is not None else (o.get('valore') or 0))
+    q = _num(o.get('quantita'), 1.0)
+    vu_raw = o.get('valore_unitario') if o.get('valore_unitario') not in (None, '') else o.get('valore')
+    vu = _num(vu_raw, 0.0)
     data_acq = (o.get('data_acquisto') or o.get('data') or '').strip()
     if not data_acq:
         data_acq = datetime.now().strftime('%Y-%m-%d')
@@ -48,14 +57,17 @@ def api_inventario():
         id_target = _intero(o.get('id'))
         for i, x in enumerate(dati['inventario']):
             if _intero(x.get('id')) == id_target:
-                o['id'] = id_target
-                _normalizza_oggetto(o)
-                dati['inventario'][i] = o
+                x.update(o)
+                x['id'] = id_target
+                _normalizza_oggetto(x)
                 storage.salva()
-                return jsonify({'success': True, 'oggetto': o})
+                return jsonify({'success': True, 'oggetto': x})
         return jsonify({'success': False, 'error': 'Oggetto non trovato'}), 404
     if request.method == 'DELETE':
-        id_del = request.args.get('id', type=int)
-        dati['inventario'] = [x for x in dati['inventario'] if _intero(x.get('id')) != id_del]
-        storage.salva()
-        return jsonify({'success': True})
+        id_target = _intero(request.args.get('id'))
+        prima = len(dati['inventario'])
+        dati['inventario'] = [x for x in dati['inventario'] if _intero(x.get('id')) != id_target]
+        if len(dati['inventario']) < prima:
+            storage.salva()
+            return jsonify({'success': True})
+        return jsonify({'success': False, 'error': 'Oggetto non trovato'}), 404

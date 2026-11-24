@@ -1,277 +1,139 @@
+﻿"""Gestione backup automatici, manuali e su cloud."""
 from __future__ import annotations
-import os
 import json
-import time
+import logging
+import os
 import shutil
-import hashlib as _hashlib_bk
-import re
+import time
 from datetime import datetime
-from collections import defaultdict
-from app.config import (BACKUP_DIR, BACKUP_CLOUD_DIR, BACKUP_CLOUD_ABILITATO,
-                        BACKUP_MAX_GIORNALIERI, BACKUP_MAX_SETTIMANALI,
-                        BACKUP_MAX_MENSILI, BACKUP_MAX_ORE_MINIME,
-                        BACKUP_OGNI_N_SALVATAGGI, DATA_FILE)
-from app import storage
+from app.config import (
+    DATA_FILE, BACKUP_DIR, BACKUP_CLOUD_DIR, BACKUP_CLOUD_ABILITATO,
+    BACKUP_MAX_GIORNALIERI, BACKUP_MAX_SETTIMANALI, BACKUP_MAX_MENSILI,
+    BACKUP_MAX_ORE_MINIME, BACKUP_OGNI_N_SALVATAGGI,
+)
 
+log = logging.getLogger('braaap.backup')
+_backup_state = {'n_salvataggi': 0, 'ultimo_ts': 0.0}
 
 def _get_dati():
+    from app import storage
     return storage.get_dati()
 
-
-def _timestamp_backup():
-    return datetime.now().strftime('%Y%m%d_%H%M%S')
-
-def _copia_backup_in_cloud(path_locale, nome):
-    """
-    Copia un backup in cloud con retry (3 tentativi).
-    Usa shutil.copy2 diretto (senza os.replace che su Windows + OneDrive fallisce).
-    Ritorna il path cloud se successo, altrimenti None.
-    """
-    if not (BACKUP_CLOUD_ABILITATO and BACKUP_CLOUD_DIR):
+def _crea_backup(etichetta='auto', forza_cloud=False):
+    if not DATA_FILE.exists():
         return None
-
     try:
-        os.makedirs(BACKUP_CLOUD_DIR, exist_ok=True)
-    except Exception as e:
-        log.error('Impossibile creare cartella cloud %s: %s', BACKUP_CLOUD_DIR, e)
-        return None
-
-    path_cloud = os.path.join(BACKUP_CLOUD_DIR, nome)
-    meta_locale = path_locale + '.meta.json'
-    meta_cloud = path_cloud + '.meta.json'
-
-    MAX_TENTATIVI = 3
-    for tentativo in range(1, MAX_TENTATIVI + 1):
-        try:
-            shutil.copy2(path_locale, path_cloud)
-            log.info('Backup cloud OK (tentativo %d): %s', tentativo, nome)
-            if os.path.exists(meta_locale):
-                try:
-                    shutil.copy2(meta_locale, meta_cloud)
-                except Exception as e:
-                    log.warning('Meta cloud non copiato: %s', e)
-            return path_cloud
-        except Exception as e:
-            log.warning('Backup cloud - tentativo %d/%d fallito: %s', tentativo, MAX_TENTATIVI, e)
-            if tentativo < MAX_TENTATIVI:
-                time.sleep(1.0)
-
-    log.error('Backup cloud FALLITO dopo %d tentativi: %s', MAX_TENTATIVI, nome)
-    return None
-
-def _crea_backup(motivo='manuale', forza=False):
-    """Crea un backup locale + copia cloud (se configurato)."""
-    global _backup_state
-    try:
-        ts = _timestamp_backup()
-        nome = f'braaap_{ts}_{motivo}.json'
-        path_locale = os.path.join(BACKUP_DIR, nome)
-
+        dati = _get_dati()
+        BACKUP_DIR.mkdir(parents=True, exist_ok=True)
+        ts = datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
+        nome = f'braaap_backup_{ts}_{etichetta}.json'
+        dest = BACKUP_DIR / nome
+        shutil.copy2(DATA_FILE, dest)
+        n_ev = len(dati.get('eventi', []))
+        n_sc = len(dati.get('scuole', []))
+        n_al = len(dati.get('altro', []))
         meta = {
-            'data': datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
-            'motivo': motivo,
-            'eventi': len(dati.get('eventi', [])),
-            'scuole': len(dati.get('scuole', [])),
-            'rubrica': len(dati.get('rubrica', [])),
-            'task': len(dati.get('task', [])),
-            'entita': len(dati.get('entita', [])),
-            'postit': len(dati.get('postit', [])),
-            'liste': len(dati.get('liste', [])),
-            'note_vocali': len(dati.get('note_vocali', [])),
+            'file': nome,
+            'timestamp': datetime.now().isoformat(),
+            'etichetta': etichetta,
+            'dimensione_byte': dest.stat().st_size,
+            'eventi': n_ev,
+            'scuole': n_sc,
+            'altro': n_al,
+            'n_salvataggi': _backup_state.get('n_salvataggi', 0),
         }
-
-        os.makedirs(BACKUP_DIR, exist_ok=True)
-        tmp_locale = path_locale + '.tmp'
-        with open(tmp_locale, 'w', encoding='utf-8') as f:
-            json.dump(dati, f, indent=2, default=str, ensure_ascii=False)
-        os.replace(tmp_locale, path_locale)
-
-        with open(path_locale, 'rb') as f:
-            meta['checksum'] = _hashlib_bk.sha256(f.read()).hexdigest()
-        meta['dimensione'] = os.path.getsize(path_locale)
-
-        try:
-            with open(path_locale + '.meta.json', 'w', encoding='utf-8') as f:
-                json.dump(meta, f, indent=2, ensure_ascii=False)
-        except Exception as e:
-            log.warning('Impossibile scrivere meta per %s: %s', nome, e)
-
-        log.info('Backup locale: %s (%d KB)', nome, meta['dimensione'] // 1024)
-
-        # Copia cloud (con retry, OneDrive-friendly)
-        path_cloud = _copia_backup_in_cloud(path_locale, nome)
-
-        _pulisci_backup_gerarchica()
-        _backup_state['n_salvataggi'] = 0
-        return path_locale, path_cloud, motivo
-
+        with open(BACKUP_DIR / (nome + '.meta.json'), 'w', encoding='utf-8') as f:
+            json.dump(meta, f, ensure_ascii=False, indent=2)
+        if BACKUP_CLOUD_ABILITATO and (forza_cloud or etichetta in ('manuale', 'pre_import', 'pre_ripristino', 'chiusura')):
+            try:
+                cloud_dir = os.path.expandvars(BACKUP_CLOUD_DIR)
+                os.makedirs(cloud_dir, exist_ok=True)
+                shutil.copy2(dest, os.path.join(cloud_dir, nome))
+            except Exception as ce:
+                log.warning(f'Backup cloud non riuscito: {ce}')
+        _ruota_backup()
+        return meta
     except Exception as e:
-        log.error('Errore crea_backup: %s', e)
-        return None, None, None
+        log.error(f'Errore creazione backup: {e}')
+        return None
+
+def _ruota_backup():
+    try:
+        files = sorted(BACKUP_DIR.glob('braaap_backup_*.json'), key=lambda p: p.stat().st_mtime, reverse=True)
+        files = [f for f in files if not f.name.endswith('.meta.json')]
+        if len(files) <= 20:
+            return
+        giorni_visti, settimane_viste, mesi_visti, da_tenere = set(), set(), set(), set()
+        for f in files:
+            dt = datetime.fromtimestamp(f.stat().st_mtime)
+            g, s, m = dt.strftime('%Y-%m-%d'), dt.strftime('%Y-W%W'), dt.strftime('%Y-%m')
+            if len(giorni_visti) < BACKUP_MAX_GIORNALIERI or g in giorni_visti:
+                giorni_visti.add(g); da_tenere.add(f); continue
+            if len(settimane_viste) < BACKUP_MAX_SETTIMANALI or s in settimane_viste:
+                settimane_viste.add(s); da_tenere.add(f); continue
+            if len(mesi_visti) < BACKUP_MAX_MENSILI or m in mesi_visti:
+                mesi_visti.add(m); da_tenere.add(f); continue
+        for f in files:
+            if f not in da_tenere:
+                try:
+                    f.unlink(missing_ok=True)
+                    (BACKUP_DIR / (f.name + '.meta.json')).unlink(missing_ok=True)
+                except Exception:
+                    pass
+    except Exception as e:
+        log.warning(f'Errore rotazione backup: {e}')
 
 def _backup_automatico():
-    """Chiamato da salva_dati(): backup ogni N salvataggi."""
-    try:
-        _backup_state['n_salvataggi'] += 1
-        if _backup_state['n_salvataggi'] < BACKUP_OGNI_N_SALVATAGGI:
-            return
-        _crea_backup(motivo='auto')
-    except Exception as e:
-        log.error('Errore backup automatico: %s', e)
+    _backup_state['n_salvataggi'] += 1
+    ora = time.time()
+    n_ok = _backup_state['n_salvataggi'] >= BACKUP_OGNI_N_SALVATAGGI
+    t_ok = (ora - _backup_state['ultimo_ts']) >= BACKUP_MAX_ORE_MINIME * 3600
+    if n_ok or t_ok:
+        _backup_state['n_salvataggi'] = 0
+        _backup_state['ultimo_ts'] = ora
+        _crea_backup(etichetta='auto', forza_cloud=False)
 
-def _backup_all_avvio():
-    """Backup all'avvio se sono passate >= BACKUP_MAX_ORE_MINIME ore."""
-    try:
-        if not os.path.isdir(BACKUP_DIR):
-            _crea_backup(motivo='avvio_iniziale')
-            return
-        files = [f for f in os.listdir(BACKUP_DIR)
-                 if f.startswith('braaap_') and f.endswith('.json') and not f.endswith('.meta.json')]
-        if not files:
-            _crea_backup(motivo='avvio_iniziale')
-            return
-        ultimi = sorted(files, reverse=True)
-        ultimo_path = os.path.join(BACKUP_DIR, ultimi[0])
-        ore_passate = (time.time() - os.path.getmtime(ultimo_path)) / 3600.0
-        if ore_passate >= BACKUP_MAX_ORE_MINIME:
-            _crea_backup(motivo='avvio')
-        else:
-            log.info('Backup avvio saltato (ultimo %.1fh fa, soglia %dh)', ore_passate, BACKUP_MAX_ORE_MINIME)
-    except Exception as e:
-        log.error('Errore backup avvio: %s', e)
-
-def _pulisci_backup_gerarchica():
-    """Rotazione: 7 giorni + 4 settimane + 12 mesi."""
-    try:
-        _pulisci_backup_gerarchica_dir(BACKUP_DIR)
-        if BACKUP_CLOUD_ABILITATO and BACKUP_CLOUD_DIR and os.path.isdir(BACKUP_CLOUD_DIR):
-            _pulisci_backup_gerarchica_dir(BACKUP_CLOUD_DIR)
-    except Exception as e:
-        log.error('Errore rotazione backup: %s', e)
-
-def _pulisci_backup_gerarchica_dir(directory):
-    if not os.path.isdir(directory):
-        return
-    files = [f for f in os.listdir(directory)
-             if f.startswith('braaap_') and f.endswith('.json') and not f.endswith('.meta.json')]
-    if not files:
-        return
-
-    from collections import defaultdict
-    per_giorno = defaultdict(list)
-    per_settimana = defaultdict(list)
-    per_mese = defaultdict(list)
-
+def _lista_backup():
+    BACKUP_DIR.mkdir(parents=True, exist_ok=True)
+    files = sorted([f for f in BACKUP_DIR.glob('braaap_backup_*.json') if not f.name.endswith('.meta.json')],
+                   key=lambda p: p.stat().st_mtime, reverse=True)
+    risultato = []
     for f in files:
-        m = re.match(r'braaap_(\d{8})_(\d{6})_(.+)\.json', f)
-        if not m:
-            continue
-        giorno = m.group(1)
-        anno = giorno[:4]
-        mese = giorno[4:6]
-        try:
-            dt = datetime.strptime(giorno, '%Y%m%d')
-            settimana = dt.strftime('%Y_%V')
-        except Exception:
-            settimana = anno + '_00'
-        per_giorno[giorno].append(f)
-        per_settimana[settimana].append(f)
-        per_mese[anno + '_' + mese].append(f)
-
-    def tieni_uno_per_chiave(dizio, max_n):
-        chiavi_ordinate = sorted(dizio.keys(), reverse=True)[:max_n]
-        tenuti = set()
-        for k in chiavi_ordinate:
-            lista = sorted(dizio[k])
-            tenuti.add(lista[0])
-        return tenuti
-
-    tenuti = set()
-    tenuti |= tieni_uno_per_chiave(per_giorno, BACKUP_MAX_GIORNALIERI)
-    tenuti |= tieni_uno_per_chiave(per_settimana, BACKUP_MAX_SETTIMANALI)
-    tenuti |= tieni_uno_per_chiave(per_mese, BACKUP_MAX_MENSILI)
-
-    eliminati = 0
-    for f in files:
-        if f not in tenuti:
+        meta_file = BACKUP_DIR / (f.name + '.meta.json')
+        meta = {}
+        if meta_file.exists():
             try:
-                os.remove(os.path.join(directory, f))
-                meta_f = os.path.join(directory, f + '.meta.json')
-                if os.path.exists(meta_f):
-                    os.remove(meta_f)
-                eliminati += 1
+                with open(meta_file, 'r', encoding='utf-8') as mf:
+                    meta = json.load(mf)
             except Exception:
                 pass
-    if eliminati > 0:
-        log.info('Rotazione backup in %s: rimossi %d file', directory, eliminati)
-
-def _info_backup(path):
-    info = {
-        'nome': os.path.basename(path),
-        'dimensione': os.path.getsize(path) if os.path.exists(path) else 0,
-        'data_file': datetime.fromtimestamp(os.path.getmtime(path)).strftime('%Y-%m-%d %H:%M:%S') if os.path.exists(path) else '',
-    }
-    meta_path = path + '.meta.json'
-    if os.path.exists(meta_path):
-        try:
-            with open(meta_path, 'r', encoding='utf-8') as f:
-                info.update(json.load(f))
-        except Exception:
-            pass
-    if BACKUP_CLOUD_ABILITATO and BACKUP_CLOUD_DIR:
-        cloud_path = os.path.join(BACKUP_CLOUD_DIR, info['nome'])
-        info['cloud'] = os.path.exists(cloud_path)
-    else:
-        info['cloud'] = False
-    return info
-
-def _verifica_integrita_backup(path):
-    try:
-        with open(path, 'r', encoding='utf-8') as f:
-            contenuto = f.read()
-        json.loads(contenuto)
-    except Exception as e:
-        return False, f'JSON non valido: {e}'
-    meta_path = path + '.meta.json'
-    if os.path.exists(meta_path):
-        try:
-            with open(meta_path, 'r', encoding='utf-8') as f:
-                meta = json.load(f)
-            checksum_atteso = meta.get('checksum')
-            if checksum_atteso:
-                checksum_reale = _hashlib_bk.sha256(contenuto.encode('utf-8')).hexdigest()
-                if checksum_reale != checksum_atteso:
-                    return False, 'Checksum non corrisponde'
-        except Exception:
-            pass
-    return True, None
+        dt = datetime.fromtimestamp(f.stat().st_mtime)
+        risultato.append({
+            'file': f.name,
+            'timestamp': meta.get('timestamp', dt.isoformat()),
+            'data_leggibile': dt.strftime('%d/%m/%Y %H:%M:%S'),
+            'etichetta': meta.get('etichetta', 'auto'),
+            'dimensione_byte': f.stat().st_size,
+            'dimensione_kb': round(f.stat().st_size / 1024, 1),
+            'eventi': meta.get('eventi', '?'),
+            'scuole': meta.get('scuole', '?'),
+            'altro': meta.get('altro', '?'),
+        })
+    return risultato
 
 def _ripristina_backup(nome_file):
-    path_backup = os.path.join(BACKUP_DIR, nome_file)
-    if not os.path.exists(path_backup):
-        return False, 'Backup non trovato', None
-
-    ok, errore = _verifica_integrita_backup(path_backup)
-    if not ok:
-        return False, f'Backup corrotto: {errore}', None
-
-    ts = _timestamp_backup()
-    sicurezza = os.path.join(BACKUP_DIR, f'braaap_{ts}_pre_restore.json')
+    from app import storage
+    nome_sicuro = os.path.basename(nome_file or '')
+    sorgente = BACKUP_DIR / nome_sicuro
+    if not sorgente.exists() or not sorgente.name.startswith('braaap_backup_'):
+        return False, 'File backup non trovato'
     try:
-        shutil.copy2(DATA_FILE, sicurezza)
-        log.info('Backup sicurezza pre-restore: %s', sicurezza)
+        with open(sorgente, 'r', encoding='utf-8') as f:
+            nuovi_dati = json.load(f)
+        if not isinstance(nuovi_dati, dict) or 'eventi' not in nuovi_dati:
+            return False, 'Il file backup non e un JSON Braaap valido'
     except Exception as e:
-        return False, f'Impossibile creare backup di sicurezza: {e}', None
-
-    try:
-        with open(path_backup, 'r', encoding='utf-8') as f:
-            contenuto = f.read()
-        nuovi_dati = json.loads(contenuto)
-        tmp = DATA_FILE + '.tmp'
-        with open(tmp, 'w', encoding='utf-8') as f:
-            json.dump(nuovi_dati, f, indent=2, default=str, ensure_ascii=False)
-        os.replace(tmp, DATA_FILE)
-        log.info('Backup ripristinato: %s', nome_file)
-        return True, f'Ripristinato da {nome_file}', sicurezza
-    except Exception as e:
-        return False, f'Errore ripristino: {e}', sicurezza
+        return False, f'Backup corrotto: {e}'
+    _crea_backup(etichetta='pre_ripristino', forza_cloud=True)
+    storage.imposta_dati_completi(nuovi_dati)
+    return True, f'Ripristinato {nome_sicuro} ({len(nuovi_dati.get("eventi", []))} eventi)'

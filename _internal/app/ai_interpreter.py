@@ -1,4 +1,4 @@
-"""Interprete AI basato su Groq per il parsing intelligente del testo."""
+﻿"""Interprete AI basato su Groq per il parsing intelligente del testo."""
 from __future__ import annotations
 import json
 from groq import Groq
@@ -45,7 +45,7 @@ def interpreta_con_groq(testo: str, contesto: dict = None) -> dict:
             'chiarimenti': ['GROQ_API_KEY non configurata nel .env'],
         }
 
-    client = Groq(api_key=GROQ_API_KEY)
+    client = Groq(api_key=GROQ_API_KEY, timeout=20.0)
 
     messaggio_utente = testo
     if contesto:

@@ -1,4 +1,4 @@
-from __future__ import annotations
+﻿from __future__ import annotations
 import base64, json, shutil, socket, time, urllib.request, urllib.parse
 from flask import Blueprint, jsonify, request
 from app import storage
@@ -10,7 +10,7 @@ SYNC_TOKEN = f"BRAAAP_LAN_{PASSWORD_DEFAULT}"
 
 def _mio_ip() -> str:
     try:
-        s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM); s.connect(("8.8.8.8", 80)); ip = s.getsockname(); s.close(); return ip
+        s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM); s.connect(("8.8.8.8", 80)); ip = s.getsockname()[0]; s.close(); return ip
     except Exception: return "127.0.0.1"
 
 def _lista_media() -> dict:
@@ -25,7 +25,7 @@ def _lista_media() -> dict:
 def _merge(loc: dict, rem: dict) -> dict:
     if DATA_FILE.exists(): shutil.copy2(DATA_FILE, BACKUP_DIR / f"pre_sync_{time.strftime('%Y%m%d_%H%M%S')}.json")
     u = json.loads(json.dumps(loc))
-    for k in ("eventi", "scuole", "rubrica", "inventario", "entita", "task", "liste", "note_calendario", "note_vocali", "postit"):
+    for k in ("eventi", "altro", "entrate", "uscite", "portafoglio", "scuole", "rubrica", "inventario", "entita", "task", "liste", "note_calendario", "note_vocali", "postit"):
         m = {str(x.get("id")) if x.get("id") is not None else json.dumps(x, sort_keys=True): x for x in u.get(k, [])}
         for x in rem.get(k, []):
             key = str(x.get("id")) if x.get("id") is not None else json.dumps(x, sort_keys=True)
@@ -59,9 +59,9 @@ def api_media():
     if request.headers.get("X-Sync-Token") != SYNC_TOKEN: return jsonify({"success": False}), 403
     if request.method == "GET":
         t = (DATA_DIR / request.args.get("path", "")).resolve()
-        return jsonify({"success": True, "b64": base64.b64encode(t.read_bytes()).decode("ascii")}) if str(t).startswith(str(DATA_DIR.resolve())) and t.is_file() else (jsonify({"success": False}), 404)
+        return jsonify({"success": True, "b64": base64.b64encode(t.read_bytes()).decode("ascii")}) if t.is_relative_to(DATA_DIR.resolve()) and t.is_file() else (jsonify({"success": False}), 404)
     b = request.get_json(force=True) or {}; t = (DATA_DIR / b.get("path", "")).resolve()
-    if str(t).startswith(str(DATA_DIR.resolve())) and b.get("b64"):
+    if t.is_relative_to(DATA_DIR.resolve()) and b.get("b64"):
         t.parent.mkdir(parents=True, exist_ok=True); t.write_bytes(base64.b64decode(b["b64"])); return jsonify({"success": True})
     return jsonify({"success": False}), 400
 
@@ -91,3 +91,4 @@ def api_esegui():
         return jsonify({"success": True, "remoto": rem.get("hostname", h), "media_sincronizzati": tr})
     except Exception as e:
         return jsonify({"success": False, "error": f"PC Fisso non raggiungibile ({e})."})
+
