@@ -9,6 +9,11 @@
     '.btn-mode-sel.attivo{background:#0288D1;color:#fff;border-color:#0288D1}',
     '.pannello-colonne{display:none;margin:0 0 12px;padding:10px 12px;background:var(--card,#fff);border:1px solid #0288D1;border-radius:10px}',
     '.pannello-colonne.aperto{display:block}',
+    '.col-resizer{position:absolute;top:0;right:-3px;width:8px;height:100%;cursor:col-resize;user-select:none;z-index:10;border-right:2px solid transparent;transition:border-color .15s}',
+    '.col-resizer:hover,.col-resizer.attivo{border-right-color:#0288D1;background:rgba(2,136,209,.12)}',
+    'table.tabella-ridimensionabile{table-layout:fixed!important}',
+    'table.tabella-ridimensionabile th,table.tabella-ridimensionabile td{position:relative;overflow:hidden;text-overflow:ellipsis}',
+    '.vista-compatta [id^="griglia"]>.card>*{position:relative;min-width:0}',
     '.col-chip{display:inline-flex;align-items:center;gap:5px;padding:4px 8px;margin:3px;border-radius:7px;background:rgba(2,136,209,.08);border:1px solid rgba(2,136,209,.25);font-size:12px}',
     '.col-chip button{border:none;background:rgba(0,0,0,.08);border-radius:4px;cursor:pointer;padding:1px 5px;font-size:11px;font-weight:700}',
     '.vista-compatta table{width:100%;border-collapse:collapse;font-size:12.5px}',
@@ -26,8 +31,59 @@
   var PAGINE=['page-inventario','page-eventi','page-scuole','page-magazzino','page-materiali','page-altro','page-rubrica','page-task','page-archivio','page-bilancio','page-liste'];
   function _getCfg(p){try{return JSON.parse(localStorage.getItem('braaap_cols_'+p)||'null');}catch(e){return null;}}
   function _setCfg(p,c){try{localStorage.setItem('braaap_cols_'+p,JSON.stringify(c));}catch(e){}}
+  function _getW(p){try{return JSON.parse(localStorage.getItem('braaap_widths_'+p)||'{}');}catch(e){return {};}}
+  function _setW(p,w){try{localStorage.setItem('braaap_widths_'+p,JSON.stringify(w));}catch(e){}}
+  function _attivaResize(pid){
+    var pg=document.getElementById(pid);if(!pg)return;setTimeout(function(){_attivaResize(pid);},20);
+    var wmap=_getW(pid),tbl=pg.querySelector('table');
+    if(tbl&&tbl.tHead&&tbl.tHead.rows.length){
+      tbl.classList.add('tabella-ridimensionabile');
+      var ths=Array.from(tbl.tHead.rows.item(0).cells);
+      ths.forEach(function(th,i){
+        var oi=th.dataset.oi||String(i);
+        if(wmap[oi]){th.style.width=wmap[oi]+'px';th.style.minWidth=wmap[oi]+'px';}
+        if(th.querySelector('.col-resizer'))return;
+        var rz=document.createElement('span');rz.className='col-resizer';rz.title='Trascina per allargare/stringere';
+        rz.onmousedown=function(e){
+          e.preventDefault();e.stopPropagation();rz.classList.add('attivo');
+          var startX=e.clientX,startW=th.getBoundingClientRect().width;
+          function onMove(ev){var nw=Math.max(48,Math.round(startW+(ev.clientX-startX)));th.style.width=nw+'px';th.style.minWidth=nw+'px';wmap[oi]=nw;}
+          function onUp(){rz.classList.remove('attivo');document.removeEventListener('mousemove',onMove);document.removeEventListener('mouseup',onUp);_setW(pid,wmap);}
+          document.addEventListener('mousemove',onMove);document.addEventListener('mouseup',onUp);
+        };
+        th.appendChild(rz);
+      });
+      tbl.querySelectorAll('td').forEach(function(td){var txt=(td.textContent||'').trim();if(/^[\d.,\s€+-]+$/.test(txt))td.style.whiteSpace='nowrap';});
+      return;
+    }
+    var gr=pg.querySelector('[id^="griglia"],[id^="materialiContainer"]');
+    if(gr&&gr.children.length&&pg.classList.contains('vista-compatta')){
+      var cards=Array.from(gr.children),cols=[];
+      cards.forEach(function(card){
+        Array.from(card.children).forEach(function(cell,i){
+          var oi=cell.dataset.oi||String(i);cols[i]=wmap[oi]?wmap[oi]+'px':'minmax(110px,1fr)';
+          if(cell.style.display==='none')cols[i]='0px';
+          if(cell.querySelector('.col-resizer'))return;
+          var rz=document.createElement('span');rz.className='col-resizer';rz.title='Trascina per allargare/stringere';
+          rz.onmousedown=function(e){
+            e.preventDefault();e.stopPropagation();rz.classList.add('attivo');
+            var startX=e.clientX,startW=cell.getBoundingClientRect().width;
+            function onMove(ev){
+              var nw=Math.max(55,Math.round(startW+(ev.clientX-startX)));wmap[oi]=nw;
+              cards.forEach(function(c2){var tpl=Array.from(c2.children).map(function(k,idx){if(k.style.display==='none')return'';var koi=k.dataset.oi||String(idx);return wmap[koi]?wmap[koi]+'px':'minmax(110px,1fr)';}).filter(Boolean).join(' ');c2.style.setProperty('grid-template-columns',tpl,'important');});
+            }
+            function onUp(){rz.classList.remove('attivo');document.removeEventListener('mousemove',onMove);document.removeEventListener('mouseup',onUp);_setW(pid,wmap);}
+            document.addEventListener('mousemove',onMove);document.addEventListener('mouseup',onUp);
+          };
+          cell.appendChild(rz);
+        });
+        var tplInit=Array.from(card.children).map(function(k,idx){if(k.style.display==='none')return'';var koi=k.dataset.oi||String(idx);return wmap[koi]?wmap[koi]+'px':'minmax(110px,1fr)';}).filter(Boolean).join(' ');
+        if(tplInit)card.style.setProperty('grid-template-columns',tplInit,'important');
+      });
+    }
+  }
   function applicaCelle(pid){
-    var pg=document.getElementById(pid);if(!pg)return;
+    var pg=document.getElementById(pid);if(!pg)return;setTimeout(function(){_attivaResize(pid);},20);
     var cfg=_getCfg(pid),tbl=pg.querySelector('table');
     if(tbl&&tbl.tHead&&tbl.tHead.rows.length){
       var ths=Array.from(tbl.tHead.rows.item(0).cells);
@@ -67,11 +123,11 @@
     pan.innerHTML=h+'</div>';
     pan.querySelectorAll('input').forEach(function(cb){cb.onchange=function(){var oi=parseInt(cb.dataset.oi,10),ix=cfg.nascoste.indexOf(oi);if(cb.checked&&ix!==-1)cfg.nascoste.splice(ix,1);if(!cb.checked&&ix===-1)cfg.nascoste.push(oi);_setCfg(pid,cfg);applicaCelle(pid);};});
     pan.querySelectorAll('button[data-mv]').forEach(function(b){b.onclick=function(){var p=parseInt(b.dataset.p,10),t=p+parseInt(b.dataset.mv,10),x=cfg.ordine.at(p);cfg.ordine.splice(p,1);cfg.ordine.splice(t,0,x);_setCfg(pid,cfg);applicaCelle(pid);renderPan(pid);};});
-    pan.querySelector('[data-act="rst"]').onclick=function(){localStorage.removeItem('braaap_cols_'+pid);location.reload();};
+    pan.querySelector('[data-act="rst"]').onclick=function(){localStorage.removeItem('braaap_cols_'+pid);localStorage.removeItem('braaap_widths_'+pid);location.reload();};
     pan.querySelector('[data-act="ok"]').onclick=function(){pan.classList.remove('aperto');};
   }
   function setVista(pid,m){
-    var pg=document.getElementById(pid);if(!pg)return;
+    var pg=document.getElementById(pid);if(!pg)return;setTimeout(function(){_attivaResize(pid);},20);
     pg.classList.remove('vista-compatta','vista-standard','vista-dettagli','vista-pag-compatta','vista-pag-estesa','vista-pag-dettagli');
     pg.classList.add('vista-'+m);try{localStorage.setItem('braaap_mode_'+pid,m);}catch(e){}
     pg.querySelectorAll('.btn-mode-sel[data-m]').forEach(function(b){b.classList.toggle('attivo',b.dataset.m===m);});
@@ -80,7 +136,7 @@
   document.addEventListener('DOMContentLoaded',function(){
     document.querySelectorAll('.barra-viste').forEach(function(e){(e.parentElement||e).remove();});
     PAGINE.forEach(function(pid){
-      var pg=document.getElementById(pid);if(!pg)return;
+      var pg=document.getElementById(pid);if(!pg)return;setTimeout(function(){_attivaResize(pid);},20);
       if(!pg.querySelector('.barra-vista-box')){
         var box=document.createElement('div');box.className='barra-vista-box';
         box.innerHTML='<div class="barra-vista-grp"><span style="font-size:11.5px;font-weight:700;opacity:.75;margin-right:4px">Vista:</span><button type="button" class="btn-mode-sel" data-m="compatta">☰ Compatta</button><button type="button" class="btn-mode-sel" data-m="standard">⊞ Standard</button><button type="button" class="btn-mode-sel" data-m="dettagli">📇 Dettagli</button></div><button type="button" class="btn-mode-sel" data-act="cols">⚙️ Celle / Colonne</button>';
@@ -94,3 +150,5 @@
     setInterval(function(){PAGINE.forEach(function(pid){var pg=document.getElementById(pid);if(pg&&pg.classList.contains('attiva'))applicaCelle(pid);});},700);
   });
 })();
+
+
