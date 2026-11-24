@@ -173,3 +173,4 @@ def api_esporta(sezione, formato):
     r.headers['Content-Disposition'] = f'attachment; filename="{nome_file}.xlsx"'
     return r
 
+
