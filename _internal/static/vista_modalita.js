@@ -160,22 +160,28 @@
     anno=parseInt(anno,10)||annoDef;
     window.location.href='/api/esporta/intelligente.xlsx?anno='+anno;
   };
+  
+
+
   (function(){
     function addSmartBtn(){
       if(document.getElementById('btnSmartExport'))return;
-      var lo=document.querySelector('a[href*="logout"]');var bar=lo?lo.parentElement:(document.querySelector('.top-actions, .header-actions, .topbar, nav, header'));
-      if(!bar)return;
+      var target=document.querySelector('#strumenti .strumenti-grid, #strumenti .grid, #strumenti .cards, #page-strumenti .grid, #page-strumenti');
+      if(!target){
+        var h=Array.from(document.querySelectorAll('h1,h2,h3,button,a')).find(function(el){return /strumenti/i.test(el.textContent||'')&&el.closest('section,div[id]');});
+        if(h)target=h.closest('section,div[id]');
+      }
+      if(!target)return;
       var b=document.createElement('button');
       b.id='btnSmartExport';
       b.type='button';
-      b.innerHTML='✨ Report Intelligente';
+      b.innerHTML='📊 Report Intelligente (Excel)';
       b.title='Scarica Excel multi-foglio con KPI, Bilancio Annuale, Margini Eventi e Patrimonio';
-      b.style.cssText='background:linear-gradient(135deg,#0288D1,#0277BD);color:#fff;border:none;padding:7px 13px;border-radius:8px;font-weight:700;font-size:12px;cursor:pointer;margin-left:8px;box-shadow:0 2px 6px rgba(2,136,209,.3)';
+      b.style.cssText='background:linear-gradient(135deg,#16A34A,#15803D);color:#fff;border:none;padding:12px 18px;border-radius:10px;font-weight:700;font-size:14px;cursor:pointer;margin:8px 0;box-shadow:0 4px 12px rgba(22,163,74,.35);display:inline-flex;align-items:center;gap:8px';
       b.onclick=window.esportaIntelligente;
-      if(lo&&lo.parentElement===bar)bar.insertBefore(b,lo);else bar.appendChild(b);
+      target.appendChild(b);
     }
     if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',addSmartBtn);
     else addSmartBtn();
     setTimeout(addSmartBtn,600);
   })();
-
