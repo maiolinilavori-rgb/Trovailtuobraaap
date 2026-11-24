@@ -1,0 +1,1511 @@
+﻿<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Trova il tuo Braaap</title>
+<!-- PWA + Branding BRAAAP -->
+<link rel="manifest" href="/static/manifest.json">
+<meta name="theme-color" content="#6366f1">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Trova il tuo Braaap">
+<link rel="icon" type="image/png" sizes="192x192" href="/static/icon-192.png">
+<link rel="icon" type="image/png" sizes="512x512" href="/static/icon-512.png">
+<link rel="apple-touch-icon" href="/static/apple-touch-icon.png">
+<!-- Fine PWA -->
+
+<link rel="stylesheet" href="/static/style.css">
+
+<style id="braaap-ux-globale">
+.modale .content { max-width: 780px !important; width: 94% !important; }
+textarea { resize: both !important; min-height: 64px; width: 100% !important; max-width: 100% !important; box-sizing: border-box !important; white-space: pre-wrap; line-height: 1.45; }
+input[type="text"], input:not([type]), select { resize: horizontal; overflow: auto; min-width: 0; box-sizing: border-box !important; }
+
+.barra-viste-wrap { display: flex; justify-content: flex-end; margin-bottom: 10px; }
+.barra-viste { display: inline-flex; gap: 4px; background: #f1f5f9; padding: 4px; border-radius: 10px; border: 1px solid #cbd5e1; }
+.barra-viste button { border: none; background: transparent; padding: 5px 12px; border-radius: 7px; font-size: 12px; font-weight: 700; color: #475569; cursor: pointer; white-space: nowrap; }
+.barra-viste button.attiva { background: #0288D1; color: #fff; box-shadow: 0 1px 3px rgba(0,0,0,.18); }
+
+</style>
+</head>
+<body>
+
+<!-- ============== BARRA NAVIGAZIONE ============== -->
+<div id="barraNavigazione" class="barra-nav">
+  <button id="btnNavIndietro" class="nav-btn nav-btn-indietro" onclick="vaiIndietro()" title="Indietro (Alt+Left)" style="display:none">
+    <span class="nav-icona">&#8592;</span>
+    <span class="nav-label">Indietro</span>
+  </button>
+  <button class="nav-btn nav-btn-home" onclick="vaiHome()" title="Home (Alt+H)">
+    <span class="nav-icona">&#127968;</span>
+    <span class="nav-label">Home</span>
+  </button>
+  <div class="selettore-anno-wrap">
+    <select id="selettoreAnno" class="selettore-anno" onchange="cambiaAnno(this.value)" title="Filtra per anno">
+      <option value="tutti">&#128197; Tutti</option>
+    </select>
+  </div>
+  <button id="btnRicercaGlobale" class="nav-btn nav-btn-ricerca" onclick="apriRicercaGlobale()" title="Cerca in tutto il sito (Ctrl+K)">
+    <span class="nav-icona">&#128269;</span>
+    <span class="nav-label">&#128269; Cerca</span>
+  </button>
+  <div class="nav-titolo">
+    <span id="navTitoloPagina">Home</span>
+    <span id="navSottotitolo" class="nav-sottotitolo"></span>
+  </div>
+</div>
+
+<!-- ===================== MASCHERA PRIMO AVVIO ===================== -->
+<div id="primoAvvio">
+  <div class="content">
+    <h1>Benvenuto in Trova il tuo Braaap!</h1>
+    <div class="sotto">Prima di iniziare, ho bisogno di sapere <strong>cosa hai in magazzino adesso</strong>.<br>
+      Questi numeri diventano il punto di partenza per tutto il resto.</div>
+
+    <div class="giacenza-grid">
+      <div class="campo">
+        <label>📦 Braccialetti in magazzino</label>
+        <input type="number" id="pa-bracc" value="0" min="0">
+      </div>
+      <div class="campo">
+        <label>🏅 Medaglie in magazzino</label>
+        <input type="number" id="pa-med" value="0" min="0">
+      </div>
+      <div class="campo">
+        <label>🔖 Adesivi in magazzino</label>
+        <input type="number" id="pa-ades" value="0" min="0">
+      </div>
+      <div class="campo">
+        <label>🏆 Coppe in magazzino</label>
+        <input type="number" id="pa-coppe" value="0" min="0">
+      </div>
+    </div>
+
+    <div style="background:var(--bg);border-radius:10px;padding:12px;margin-bottom:16px">
+      <label style="font-size:14px;display:block;margin-bottom:8px">📥 Carichi storici noti (opzionale)</label>
+      <div style="font-size:12px;color:var(--text-muted);margin-bottom:8px">
+        Es. "3100 braccialetti fatti a luglio 2026", "220 medaglie assemblate".
+        Sono entrate in magazzino in una data passata.
+      </div>
+      <div id="pa-carichi-extra"></div>
+      <button class="btn btn-gray" onclick="paAggiungiCarico()" style="font-size:12px;padding:6px 12px;margin-top:6px">+ Aggiungi carico storico</button>
+    </div>
+
+    <button class="btn btn-green pulsone" onclick="paConferma()">
+      ✅ CONFERMA GIACENZA INIZIALE
+    </button>
+    <div style="font-size:12px;color:var(--text-muted);text-align:center;margin-top:12px">
+      Potrai correggere questi numeri in qualsiasi momento da Widget → Manutenzione dati.
+    </div>
+  </div>
+</div>
+
+<!-- ===================== APP ===================== -->
+<div class="container" id="appContainer" style="display:none">
+
+<nav class="nav">
+  <div class="logo" onclick="scegliLogo()" title="Clicca per cambiare il logo" style="cursor:pointer">
+    {% if dati.get('logo') %}
+    <img src="data:image/png;base64,{{ dati.logo }}" alt="Logo" id="logoAttuale">
+    {% else %}<span id="logoAttuale">⚡</span>{% endif %}
+    <span>Trova il tuo Braaap</span>
+  </div>
+  <input type="file" id="logoInputNascosto" accept="image/*" style="display:none" onchange="uploadLogoCliccato(this.files)">
+  <div class="menu">
+    <a class="active" onclick="mostra('dashboard')">🏠 Home</a>
+    <a onclick="mostra('eventi')">📅 Eventi</a>
+    <a onclick="mostra('scuole')">🏫 Scuole</a>
+    <a onclick="mostra('altro')">📦 ALTRO</a>
+    <a onclick="mostra('rubrica')">📞 Rubrica</a>
+    <a onclick="mostra('task')">✅ Task</a>
+    <a onclick="mostra('calendario')">🗓️ Calendario</a>
+    <a onclick="mostra('magazzino')">📊 Magazzino</a>
+    <a onclick="mostra('materiali')">🎁 Materiali</a>
+    <a onclick="mostra('galleria')">&#128248; Galleria</a>
+    <a onclick="mostra('inventario')">🧰 Inventario</a>
+    <a onclick="mostra('lavagna')">📌 Lavagna</a>
+    <a onclick="mostra('liste')">🛒 Liste</a>
+    <a onclick="mostra('elabora')">🧠 Elabora</a>
+    <a onclick="mostra('archivio')">📊 Archivio</a>
+    <a onclick="mostra('storico')" id="menuStorico">&#128202; Storico</a>
+    <a onclick="mostra('bilancio')" id="menuBilancio">&#128176; Bilancio</a>
+    <a onclick="mostra('widget')">🧩 Widget</a>
+    <a onclick="mostra('comandi')">💻 Comandi</a>
+    <a onclick="mostra('esporta')">📤 Esporta</a>
+    <a onclick="mostra('importa')">📥 Importa</a>
+    <a onclick="mostra('logo')">🎨 Logo</a>
+    <a class="btn-nuovo" onclick="apriModaleEvento()">✨ + Nuovo Evento</a>
+
+    <div class="tema-selector">
+      <button class="btn-tema" onclick="toggleTemaDropdown()" title="Cambia tema">🎨</button>
+      <div class="tema-dropdown" id="temaDropdown">
+        <div class="tema-opzione" onclick="impostaTema('antracite')"><span class="tema-swatch" style="background:#37474F"></span> Antracite</div>
+        <div class="tema-opzione" onclick="impostaTema('rosa')"><span class="tema-swatch" style="background:#EC4899"></span> Rosa</div>
+        <div class="tema-opzione" onclick="impostaTema('scuro')"><span class="tema-swatch" style="background:#6366F1"></span> Scuro</div>
+        <div class="tema-opzione" onclick="impostaTema('contrasto')"><span class="tema-swatch" style="background:#FFD400;box-shadow:inset 0 0 0 2px #000"></span> Contrasto</div>
+        <div class="tema-opzione" onclick="impostaTema('bimbi')"><span class="tema-swatch" style="background:#FF6B35"></span> Bimbi</div>
+      </div>
+    </div>
+
+    <div class="mic-controller">
+      <button id="btnRec" onclick="premiRec()" title="Registra">⏺️</button>
+      <button id="btnStop" onclick="premiStop()" disabled>⏹️</button>
+      <button id="btnOnAir" onclick="toggleOnAir()" title="ON AIR">📡</button>
+    </div>
+  </div></nav>
+
+<div id="vocePanel" class="voce-panel">
+  <div id="voceIcona">🎙️</div>
+  <div id="voceStato">Premi REC e parla</div>
+  <div id="voceTrascrizione"></div>
+</div>
+
+<!-- ============== DASHBOARD ============== -->
+<div class="pagina active" id="page-dashboard">
+  <div class="card">
+    <div class="clock-wrap">
+      <div class="clock" id="orologio">00:00:00</div>
+      <div class="clock-label" id="dataCompleta">Caricamento...</div>
+    </div>
+  </div>
+
+  <div id="avvisiDashboard"></div>
+
+  <div class="grid-stats" id="stats">
+    <div class="stat cliccabile" onclick="mostra('eventi')"><div class="num" style="color:#DC2626" id="sEventi">0</div><div class="label">📅 Eventi</div></div>
+    <div class="stat cliccabile" onclick="mostra('scuole')"><div class="num" style="color:#2563EB" id="sScuole">0</div><div class="label">🏫 Scuole</div></div>
+    <div class="stat cliccabile" onclick="mostra('altro')"><div class="num" style="color:#6b7280" id="sAltro">0</div><div class="label">📦 Eventi ALTRO</div></div>
+    <div class="stat cliccabile" onclick="mostra('rubrica')"><div class="num" style="color:#7C3AED" id="sRubrica">0</div><div class="label">📞 Rubrica</div></div>
+    <div class="stat cliccabile" onclick="mostra('magazzino')"><div class="num" style="color:#16A34A" id="sBraccialetti">0</div><div class="label">📦 Bracc.</div></div>
+    <div class="stat cliccabile" onclick="mostra('magazzino')"><div class="num" style="color:#d97706" id="sMedaglie">0</div><div class="label">🏅 Med.</div></div>
+    <div class="stat cliccabile" onclick="mostra('magazzino')"><div class="num" style="color:#F59E0B" id="sAdesivi">0</div><div class="label">🔖 Ades.</div></div>
+    <div class="stat cliccabile" onclick="mostra('magazzino')"><div class="num" style="color:#9333EA" id="sCoppe">0</div><div class="label">🏆 Coppe</div></div>
+    <div class="stat cliccabile" onclick="mostra('task')"><div class="num" style="color:#EA580C" id="sTask">0</div><div class="label">✅ Task</div></div>
+    <div class="stat cliccabile" onclick="mostra('materiali')"><div class="num" style="color:#0891b2" id="sEntita">0</div><div class="label">📦 Materiali</div></div>
+  </div>
+
+  <div style="display:grid;grid-template-columns:2fr 1fr;gap:16px">
+    <div class="card">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;flex-wrap:wrap;gap:8px">
+        <h2 style="margin:0">📅 Calendario</h2>
+        <div style="display:flex;gap:4px">
+          <button class="btn btn-red" id="btnVistaMese" onclick="cambiaVistaCalMini('mese')" style="padding:4px 10px;font-size:12px">Mese</button>
+          <button class="btn btn-gray" id="btnVistaSettimana" onclick="cambiaVistaCalMini('settimana')" style="padding:4px 10px;font-size:12px">Settimana</button>
+          <button class="btn btn-gray" id="btnVistaAnno" onclick="cambiaVistaCalMini('anno')" style="padding:4px 10px;font-size:12px">Anno</button>
+        </div>
+      </div>
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;flex-wrap:wrap;gap:8px">
+        <div style="display:flex;gap:6px;align-items:center">
+          <button class="btn btn-gray" onclick="cambiaMese(-1)">‹</button>
+          <span style="font-weight:700;min-width:130px;text-align:center" id="meseTitolo"></span>
+          <button class="btn btn-gray" onclick="cambiaMese(1)">›</button>
+        </div>
+        <div style="display:flex;gap:6px;align-items:center">
+          <select id="saltoAnnoMini" onchange="saltaAnnoCalMini()" style="width:90px;padding:4px"></select>
+          <button class="btn btn-red" onclick="vaiOggi()" style="padding:4px 12px;font-size:12px">📅 Oggi</button>
+        </div>
+      </div>
+      <div class="cal-grid" id="calendario"></div>
+      <div id="vistaSettimanaContainer" style="display:none"></div>
+      <div id="vistaAnnoContainer" style="display:none"></div>
+    </div>
+
+    <div class="card">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;flex-wrap:wrap;gap:8px">
+        <h2 style="margin:0">✅ Task</h2>
+        <button class="btn btn-red" onclick="apriModaleTask()">➕ Nuovo</button>
+      </div>
+      <div id="taskLista"></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div style="display:flex;justify-content:space-between;align-items:center">
+      <h2>📋 Eventi Recenti</h2>
+      <a onclick="mostra('eventi')" style="color:#DC2626;text-decoration:none;font-size:13px;cursor:pointer">Vedi tutti →</a>
+    </div>
+    <div style="overflow-x:auto"><table><thead><tr><th>Data</th><th>Scuola</th><th>Iniziativa</th><th>Part.</th><th>Bracc.</th><th>Med.</th><th>Ades.</th><th>Coppe</th></tr></thead><tbody id="eventiRecenti"></tbody></table></div>
+  </div>
+</div>
+
+<!-- ============== ELABORA ============== -->
+<div class="pagina" id="page-elabora">
+  <h2 style="margin-bottom:14px">🧠 Elabora</h2>
+  <div class="elabora-grid">
+    <div class="card">
+      <label style="font-size:14px;display:block;margin-bottom:8px">
+        Scrivi, incolla o trascina qui qualsiasi cosa: appunti, un file Excel, un testo scritto a mano, una lista della spesa...
+      </label>
+      <textarea id="elaboraTesto" class="testo-grande" placeholder="Es: Ho acquistato 2 Gokart a pedale uno rosso uno blu costo unitario 1500 euro il giorno 10 ottobre del 2020 e 3 piccoli del valore di 300 euro cadauno acquistati in stock alla BERG"></textarea>
+      <div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap;align-items:center">
+        <input type="file" id="elaboraFile" accept=".txt,.csv,.xlsx,.xls" style="display:none" onchange="elaboraCaricaFile(this.files)">
+        <button class="btn btn-blue" onclick="document.getElementById('elaboraFile').click()">📎 Allega file</button>
+        <button class="btn btn-gray" onclick="elaboraPulisci()">🗑️ Pulisci</button>
+        <span style="flex:1"></span>
+      </div>
+      <button class="btn btn-green pulsone" onclick="elaboraAnalizza()" style="margin-top:14px">⚡ ELABORA</button>
+      <div style="font-size:12px;color:var(--text-muted);text-align:center;margin-top:8px">
+        Il sistema leggerà il testo, capirà cosa contiene, e ti mostrerà un'anteprima da confermare.
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============== LAVAGNA ============== -->
+<div class="pagina" id="page-lavagna">
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;flex-wrap:wrap;gap:8px">
+    <h2 style="margin:0">📌 La Mia Lavagna</h2>
+    <div style="display:flex;gap:8px">
+      <select id="filtroColorePostit" onchange="renderLavagna()" style="width:140px">
+        <option value="">Tutti i colori</option>
+        <option value="giallo">🟡 Gialli</option>
+        <option value="rosa">🩷 Rosa</option>
+        <option value="azzurro">🔵 Azzurri</option>
+        <option value="verde">🟢 Verdi</option>
+        <option value="lilla">🟣 Lilla</option>
+        <option value="arancione">🟠 Arancioni</option>
+      </select>
+    </div>
+  </div>
+  <div class="lavagna" id="lavagnaContainer"></div>
+</div>
+
+<!-- ============== LISTE ============== -->
+<div class="pagina" id="page-liste">
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;flex-wrap:wrap;gap:8px">
+    <h2 style="margin:0">🛒 Liste</h2>
+    <button class="btn btn-green" onclick="apriModaleLista()">➕ Nuova lista</button>
+  </div>
+  <div id="listeContainer" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:16px"></div>
+</div>
+
+<!-- ============== MATERIALI (Entità dinamiche) ============== -->
+<div class="pagina" id="page-materiali">
+  <div id="bilancioMateriali"></div>
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;flex-wrap:wrap;gap:8px">
+    <h2 style="margin:0">🎁 Materiali</h2>
+    <div style="display:flex;gap:8px">
+      <input id="cercaMateriali" placeholder="🔍 Cerca..." oninput="renderMateriali()" style="min-width:180px">
+      <select id="filtroCategoriaMateriali" onchange="renderMateriali()" style="width:180px"></select>
+      <button class="btn btn-green" onclick="apriModaleEntita()">➕ Nuovo materiale</button>
+    </div>
+  </div>
+  <div id="materialiContainer" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:12px"></div>
+</div>
+
+<!-- ============== ALTRO ============== -->
+<div class="pagina" id="page-altro">
+  <div class="card">
+    <h2>📦 ALTRO — Eventi non legati a scuola</h2>
+    <p style="color:var(--text-muted);font-size:13px;margin-bottom:12px">
+      Questi eventi non sono collegati a nessuna scuola specifica (aziende, privati, associazioni, eventi pubblici).
+    </p>
+    <div style="overflow-x:auto">
+      <table>
+        <thead><tr><th>Data</th><th>Luogo</th><th>Iniziativa</th><th>Part.</th><th>Bracc.</th><th>Med.</th><th>Ades.</th><th>Coppe</th><th></th></tr></thead>
+        <tbody id="altroBody"></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- ============== EVENTI ============== -->
+<div class="pagina" id="page-eventi">
+  <div class="card">
+    <div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center">
+      <input id="cercaEventi" placeholder="🔍 Cerca..." style="flex:1;min-width:100px" oninput="filtraEventi()">
+      <select id="filtroMediaEventi" onchange="filtraEventi()" style="width:140px" title="Filtra per media">
+          <option value="">Tutti gli eventi</option>
+          <option value="con_media">📸 Solo con media</option>
+          <option value="senza_media">Solo senza media</option>
+        </select>
+        <select id="filtroTipoEvento" onchange="filtraEventi()" style="width:160px">
+        <option value="">Con e senza scuola</option>
+        <option value="con">Solo con scuola</option>
+        <option value="altro">Solo ALTRO</option>
+      </select>
+      <select id="filtroScuola" style="flex:1;min-width:100px" onchange="filtraEventi()"><option value="">Tutte le scuole</option></select>
+      <select id="filtroAnno" style="width:90px" onchange="filtraEventi()"><option value="">Anno</option></select>
+      <button class="btn btn-blue" onclick="apriModaleEvento()">➕ Nuovo</button>
+    </div>
+  </div>
+  <div class="card">
+    <h2>📅 Eventi (<span id="conteggioEventi">0</span>)</h2>
+    <div style="overflow-x:auto">
+      <table>
+        <thead><tr><th>Data</th><th>Scuola/Luogo</th><th>Iniziativa</th><th>Part.</th><th>Bracc.</th><th>Med.</th><th>Ades.</th><th>Coppe</th><th>Margine</th><th></th></tr></thead>
+        <tbody id="listaEventi"></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- ============== SCUOLE ============== -->
+<div class="pagina" id="page-scuole">
+  <div style="display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:10px;margin-bottom:10px">
+    <h2 style="margin:0">🏫 Scuole & Organizzazioni</h2>
+    <div style="display:flex;gap:8px">
+      <input id="cercaScuole" placeholder="🔍 Cerca..." oninput="renderScuole()">
+      <button class="btn btn-green" onclick="apriModaleScuola()">➕ Nuova</button>
+    </div>
+  </div>
+  <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:12px" id="grigliaScuole"></div>
+</div>
+
+<!-- ============== RUBRICA ============== -->
+<div class="pagina" id="page-rubrica">
+  <div style="display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:10px;margin-bottom:10px">
+    <h2 style="margin:0">📞 Rubrica Contatti</h2>
+    <div style="display:flex;gap:8px;flex-wrap:wrap">
+      <input id="cercaRubrica" placeholder="🔍 Cerca..." oninput="renderRubrica()" style="min-width:180px">
+      <button class="btn btn-green" onclick="apriModaleContatto()">➕ Nuovo</button>
+      <input type="file" id="importRubricaFile" accept=".csv,.txt" style="display:none" onchange="importRubrica(this.files)">
+      <button class="btn btn-blue" onclick="document.getElementById('importRubricaFile').click()">📥 Importa CSV</button>
+      <a href="/api/rubrica/export" class="btn btn-gray" style="text-decoration:none;display:inline-block">📤 Esporta CSV</a>
+    </div>
+  </div>
+  <div class="card">
+    <div style="overflow-x:auto">
+      <table>
+        <thead><tr><th>Nome</th><th>Telefono</th><th>Email</th><th>Scuola</th><th>Ruolo</th><th>Note</th><th></th></tr></thead>
+        <tbody id="rubricaBody"></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- ============== TASK ============== -->
+<div class="pagina" id="page-task">
+  <div class="card">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;flex-wrap:wrap;gap:8px">
+      <h2 style="margin:0">✅ Task</h2>
+      <button class="btn btn-red" onclick="apriModaleTask()">➕ Nuovo Task</button>
+    </div>
+    <div id="taskCompleti"></div>
+  </div>
+</div>
+
+<!-- ============== CALENDARIO ============== -->
+<div class="pagina" id="page-calendario">
+  <div class="card">
+    <h2>🗓️ Calendario Completo</h2>
+    <div style="display:flex;gap:10px;margin-bottom:10px;flex-wrap:wrap">
+      <button class="btn btn-gray" onclick="cambiaMeseCal(-1)">‹</button>
+      <span style="font-weight:700;font-size:18px;min-width:150px;text-align:center" id="calMeseTitolo"></span>
+      <button class="btn btn-gray" onclick="cambiaMeseCal(1)">›</button>
+      <button class="btn btn-red" onclick="vaiOggiCal()">📅 Oggi</button>
+    </div>
+    <div class="cal-grid" id="calendarioCompleto"></div>
+  </div>
+</div>
+
+<!-- ============== MAGAZZINO ============== -->
+<div class="pagina" id="page-magazzino">
+  <div id="bilancioMagazzino"></div>
+  <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:16px">
+    <div class="stat"><div class="num" style="color:#2563EB" id="stockBracc">0</div><div class="label">📦 Bracc.</div></div>
+    <div class="stat"><div class="num" style="color:#16A34A" id="stockMed">0</div><div class="label">🏅 Med.</div></div>
+    <div class="stat"><div class="num" style="color:#F59E0B" id="stockAdesivi">0</div><div class="label">🔖 Ades.</div></div>
+    <div class="stat"><div class="num" style="color:#9333EA" id="stockCoppe">0</div><div class="label">🏆 Coppe</div></div>
+  </div>
+  <div class="card">
+    <h3>📥 Carico manuale</h3>
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:8px">
+      <div><label>Data</label><input type="date" id="caricoData"></div>
+      <div><label>Braccialetti</label><div style="display:flex;gap:4px"><input type="number" id="caricoBracc" placeholder="Qtà" style="flex:1" oninput="aggiornaTotaleCarico()"><input type="number" id="caricoBraccCosto" placeholder="€/pz" step="0.01" style="width:70px" oninput="aggiornaTotaleCarico()"></div></div>
+      <div><label>Medaglie</label><div style="display:flex;gap:4px"><input type="number" id="caricoMed" placeholder="Qtà" style="flex:1" oninput="aggiornaTotaleCarico()"><input type="number" id="caricoMedCosto" placeholder="€/pz" step="0.01" style="width:70px" oninput="aggiornaTotaleCarico()"></div></div>
+      <div><label>Adesivi</label><div style="display:flex;gap:4px"><input type="number" id="caricoAdesivi" placeholder="Qtà" style="flex:1" oninput="aggiornaTotaleCarico()"><input type="number" id="caricoAdesiviCosto" placeholder="€/pz" step="0.01" style="width:70px" oninput="aggiornaTotaleCarico()"></div></div>
+      <div><label>Coppe</label><div style="display:flex;gap:4px"><input type="number" id="caricoCoppe" placeholder="Qtà" style="flex:1" oninput="aggiornaTotaleCarico()"><input type="number" id="caricoCoppeCosto" placeholder="€/pz" step="0.01" style="width:70px" oninput="aggiornaTotaleCarico()"></div></div>
+      <div><label>Motivo</label><input id="caricoMotivo"></div>
+      <div style="grid-column:1/-1;text-align:right;padding:8px 12px;background:#f0f8ff;border-radius:8px;font-weight:700">💰 Totale carico: <span id="caricoTotale" style="color:#16A34A;font-size:16px">0,00 €</span></div>
+      <div style="grid-column:1/-1"><label>Nota di carico</label><textarea id="caricoNota" data-correttore="true" rows="2"></textarea></div>
+      <div style="grid-column:1/-1"><button class="btn btn-green" onclick="aggiungiCarico()" style="width:100%">📥 Carica</button></div>
+    </div>
+  </div>
+  <div class="card">
+    <h3>📜 Movimenti di magazzino</h3>
+    <div style="overflow-x:auto">
+      <table><thead><tr><th>Data</th><th>Tipo</th><th>Categoria</th><th>Qtà</th><th>Costo Unit.</th><th>Progressivo</th><th>Motivo</th><th>Nota</th><th>Azioni</th></tr></thead><tbody id="movimentiLista"></tbody></table>
+    </div>
+  </div>
+</div>
+
+<!-- ============== INVENTARIO ============== -->
+<div class="pagina" id="page-inventario">
+  <div id="bilancioInventario"></div>
+  <div style="display:flex;justify-content:space-between;margin-bottom:10px">
+    <h2 style="margin:0">🧰 Inventario</h2>
+    <button class="btn btn-green" onclick="apriModaleInventario()">➕ Nuovo</button>
+  </div>
+  <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:12px" id="grigliaInventario"></div>
+</div>
+
+<!-- ============== ARCHIVIO ============== -->
+<div class="pagina" id="page-archivio">
+  <div class="card">
+    <h2>📊 Archivio</h2>
+    <div style="display:grid;grid-template-columns:repeat(6,1fr);gap:10px">
+      <div class="stat"><div class="num" id="aEventi">0</div><div class="label">Eventi</div></div>
+      <div class="stat"><div class="num" id="aPartecipanti">0</div><div class="label">Partecipanti</div></div>
+      <div class="stat"><div class="num" id="aBraccialetti">0</div><div class="label">Bracc.</div></div>
+      <div class="stat"><div class="num" id="aMedaglie">0</div><div class="label">Med.</div></div>
+      <div class="stat"><div class="num" id="aAdesivi">0</div><div class="label">Ades.</div></div>
+      <div class="stat"><div class="num" id="aCoppe">0</div><div class="label">Coppe</div></div>
+    </div>
+    <h3 style="margin-top:14px">📈 Statistiche per scuola</h3>
+    <div style="overflow-x:auto"><table><thead><tr><th>Scuola</th><th>Eventi</th><th>Part.</th><th>Bracc.</th><th>Med.</th><th>Ades.</th><th>Coppe</th></tr></thead><tbody id="archivioBody"></tbody></table></div>
+  </div>
+</div>
+
+<!-- ============== WIDGET ============== -->
+<div class="pagina" id="page-widget">
+  <h2 style="margin-bottom:14px">🧩 Widget</h2>
+  <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:16px">
+
+    <!-- PROSSIME SCADENZE -->
+    <div class="card widget-scadenze">
+      <h3>🗓️ Prossime scadenze (30 giorni)</h3>
+      <div id="widgetScadenze"></div>
+    </div>
+
+    <!-- STOCK IN EVIDENZA -->
+    <div class="card">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+        <h3 style="margin:0">📦 Stock in evidenza</h3>
+        <button class="btn btn-gray" onclick="apriModaleSoglie()" style="padding:4px 10px;font-size:12px">âš™️ Soglie</button>
+      </div>
+      <div class="widget-stock" id="widgetStock"></div>
+    </div>
+
+    <!-- CALCOLATRICE -->
+    <div class="card">
+      <h3>🧮 Calcolatrice</h3>
+      <input id="calcDisplay" readonly style="font-size:26px;text-align:right;padding:12px;margin-bottom:8px;background:var(--bg);font-family:'Courier New',monospace" value="0">
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:6px">
+        <button class="btn btn-gray" onclick="calcInput('C')">C</button>
+        <button class="btn btn-gray" onclick="calcInput('⌫')">⌫</button>
+        <button class="btn btn-gray" onclick="calcInput('%')">%</button>
+        <button class="btn btn-blue" onclick="calcInput('/')">÷</button>
+        <button class="btn btn-gray" onclick="calcInput('7')">7</button>
+        <button class="btn btn-gray" onclick="calcInput('8')">8</button>
+        <button class="btn btn-gray" onclick="calcInput('9')">9</button>
+        <button class="btn btn-blue" onclick="calcInput('*')">×</button>
+        <button class="btn btn-gray" onclick="calcInput('4')">4</button>
+        <button class="btn btn-gray" onclick="calcInput('5')">5</button>
+        <button class="btn btn-gray" onclick="calcInput('6')">6</button>
+        <button class="btn btn-blue" onclick="calcInput('-')">−</button>
+        <button class="btn btn-gray" onclick="calcInput('1')">1</button>
+        <button class="btn btn-gray" onclick="calcInput('2')">2</button>
+        <button class="btn btn-gray" onclick="calcInput('3')">3</button>
+        <button class="btn btn-blue" onclick="calcInput('+')">+</button>
+        <button class="btn btn-gray" onclick="calcInput('0')" style="grid-column:span 2">0</button>
+        <button class="btn btn-gray" onclick="calcInput('.')">.</button>
+        <button class="btn btn-green" onclick="calcInput('=')">=</button>
+      </div>
+    </div>
+
+    <!-- CAMBIO -->
+    <div class="card">
+      <h3>💱 Convertitore Valute</h3>
+      <div style="font-size:11px;color:var(--text-muted);margin-bottom:8px">Tassi BCE — <span id="cambioAggiornato">...</span></div>
+      <div style="display:flex;gap:6px;margin-bottom:8px">
+        <input type="number" id="cambioImporto" value="1" oninput="calcolaCambio()" style="flex:1">
+        <select id="cambioDa" onchange="calcolaCambio()" style="flex:1"></select>
+      </div>
+      <div style="text-align:center;color:var(--text-muted);margin:4px 0">↓</div>
+      <div style="display:flex;gap:6px">
+        <input id="cambioRisultato" readonly style="flex:1;font-weight:700;background:var(--bg)">
+        <select id="cambioA" onchange="calcolaCambio()" style="flex:1"></select>
+      </div>
+    </div>
+
+    <!-- METEO -->
+    <div class="card">
+      <h3>🌤️ Meteo</h3>
+      <div style="display:flex;gap:6px;margin-bottom:10px">
+        <input id="meteoCitta" placeholder="Es. Breno..." onkeydown="if(event.key==='Enter')cercaMeteo()">
+        <button class="btn btn-blue" onclick="cercaMeteo()">🔍</button>
+      </div>
+      <div id="meteoRisultato"></div>
+    </div>
+
+    <!-- RADIO -->
+    <div class="card">
+      <h3>📻 Radio</h3>
+      <div id="radioStazioni" style="display:flex;flex-direction:column;gap:6px;margin-bottom:10px"></div>
+      <div style="display:flex;align-items:center;gap:10px">
+        <button class="btn btn-red" id="btnRadioPlay" onclick="toggleRadio()" style="width:52px;height:52px;border-radius:50%;font-size:20px;padding:0">â–¶️</button>
+        <div style="flex:1">
+          <div id="radioStatoTesto" style="font-size:13px;font-weight:600">Nessuna stazione</div>
+          <input type="range" id="radioVolume" min="0" max="100" value="70" oninput="cambiaVolumeRadio()">
+        </div>
+      </div>
+      <audio id="radioAudio" style="display:none"></audio>
+    </div>
+
+    <!-- MANUTENZIONE DATI -->
+    <div class="card" style="grid-column:1/-1">
+      <h3>🛠️ Manutenzione dati</h3>
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <a href="/api/export/backup" class="btn btn-green" style="text-decoration:none">â¬‡️ Scarica backup JSON</a>
+        <button class="btn btn-blue" onclick="apriModaleGiacenza()">âš™️ Modifica giacenza iniziale</button>
+        <button class="btn btn-gray" onclick="eseguiComandoRapido('ricalcola_stock')">🔄 Ricalcola stock dai movimenti</button>
+        <button class="btn btn-gray" onclick="mostra('comandi')">🖥️ Console comandi</button>
+        <button class="btn btn-red" onclick="azzeraEventiConferma()" style="background:#DC2626">âš ️ Azzera tutti gli eventi</button>
+      </div>
+    </div>
+
+    <!-- PORTAFOGLIO -->
+    <div class="card" style="grid-column:1/-1">
+      <h3>📈 Portafoglio</h3>
+      <div class="grid-stats" style="grid-template-columns:repeat(3,1fr)">
+        <div class="stat"><div class="num" id="portInvestito">€0</div><div class="label">Investito</div></div>
+        <div class="stat"><div class="num" id="portAttuale">€0</div><div class="label">Attuale</div></div>
+        <div class="stat"><div class="num" id="portGuadagno">€0</div><div class="label">Guadagno</div></div>
+      </div>
+      <div style="overflow-x:auto">
+        <table><thead><tr><th>Titolo</th><th>Qtà</th><th>Acquisto</th><th>Attuale</th><th>Var.</th></tr></thead><tbody id="portafoglioLista"></tbody></table>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ============== COMANDI ============== -->
+<div class="pagina" id="page-comandi">
+  <h2 style="margin-bottom:14px">🎙️ Comandi Vocali</h2>
+
+  <!-- ON AIR -->
+  <div class="card" style="background:linear-gradient(135deg,var(--primary),var(--secondary));color:white;border:none">
+    <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px">
+      <div>
+        <h3 style="margin:0 0 4px 0;color:white">📡 ON AIR — Ascolto continuo</h3>
+        <div style="font-size:13px;opacity:0.9">Pronuncia <strong>BRAAAP</strong> (o BRAAP, BRAP) per attivare un comando</div>
+      </div>
+      <button id="btnOnAirPagina" class="btn btn-green" onclick="toggleOnAirPagina()" style="padding:14px 28px;font-size:16px;font-weight:800">â–¶️ ATTIVA ON AIR</button>
+    </div>
+    <div id="onAirStato" style="margin-top:12px;padding:10px;background:rgba(0,0,0,0.15);border-radius:8px;font-size:13px;display:none">
+      <span id="onAirStatoTesto">🔴 In ascolto...</span>
+    </div>
+  </div>
+
+  <!-- Ricerca -->
+  <div class="card">
+    <input id="cercaComando" placeholder="🔍 Cerca un comando..." oninput="filtraComandi()" style="font-size:15px;padding:10px">
+  </div>
+
+  <!-- Magazzino -->
+  <div class="card">
+    <h3 style="color:var(--accent)">📦 Magazzino</h3>
+    <div class="comando-item" data-testo="carica braccialetti medaglie adesivi coppe">
+      <div class="comando-frase">🗣️ "Carica <strong>[numero]</strong> braccialetti / medaglie / adesivi / coppe"</div>
+      <div class="comando-effetto">→ Movimento di <strong>carico</strong> +N</div>
+    </div>
+    <div class="comando-item" data-testo="scarica togli rimuovi distribuisci">
+      <div class="comando-frase">🗣️ "Scarica / Togli / Distribuisci <strong>[numero]</strong> [categoria]"</div>
+      <div class="comando-effetto">→ Movimento di <strong>scarico</strong> -N</div>
+    </div>
+    <div class="comando-item" data-testo="quante coppe braccialetti ho magazzino">
+      <div class="comando-frase">🗣️ "Quante coppe ho / Quanti braccialetti ho"</div>
+      <div class="comando-effetto">→ 🔈 Risposta vocale con la quantità attuale</div>
+    </div>
+  </div>
+
+  <!-- Eventi -->
+  <div class="card">
+    <h3 style="color:var(--accent)">📅 Eventi</h3>
+    <div class="comando-item" data-testo="crea nuovo evento">
+      <div class="comando-frase">🗣️ "Crea un nuovo evento per <strong>[oggi/domani/data]</strong> alle <strong>[ora]</strong> <strong>[tipo]</strong> <strong>[scuola]</strong>"</div>
+      <div class="comando-effetto">→ Evento creato nel calendario</div>
+    </div>
+  </div>
+
+  <!-- Task -->
+  <div class="card">
+    <h3 style="color:var(--accent)">✅ Task</h3>
+    <div class="comando-item" data-testo="ricordami chiamare comprare entro domani">
+      <div class="comando-frase">🗣️ "Ricordami di <strong>[azione]</strong> [domani/entro sabato/data]"</div>
+      <div class="comando-effetto">→ Task creato con scadenza</div>
+    </div>
+    <div class="comando-item" data-testo="urgente subito importante">
+      <div class="comando-frase">🗣️ "Comprare farina <strong>urgente</strong>"</div>
+      <div class="comando-effetto">→ Task con priorità <strong>alta</strong></div>
+    </div>
+  </div>
+
+  <!-- Wakeword -->
+  <div class="card">
+    <h3 style="color:var(--accent)">🗣️ Wakeword riconosciute</h3>
+    <div style="font-size:14px;line-height:2">
+      <span class="badge badge-purple">BRAAAP</span>
+      <span class="badge badge-purple">BRAAP</span>
+      <span class="badge badge-purple">BRAP</span>
+      <span class="badge badge-purple">BRAAAAP</span>
+      <span class="badge badge-purple">Braap!</span>
+    </div>
+    <p style="font-size:12px;color:var(--text-muted);margin-top:8px">
+      Il sistema riconosce qualsiasi variazione di "bra" + "p".
+      Funziona meglio con voce chiara in ambiente silenzioso.
+    </p>
+  </div>
+
+  <!-- Note vocali -->
+  <div class="card">
+    <h3 style="color:var(--accent)">🎧 Note vocali</h3>
+    <p style="font-size:13px;color:var(--text-muted);margin-bottom:10px">
+      Le registrazioni sono salvate qui sotto. Puoi riascoltarle e scorrere tra loro.
+    </p>
+    <div id="noteVocaliLista"></div>
+  </div>
+
+  <!-- Modifica eventi in blocco -->
+  <div class="card">
+    <h3 style="color:var(--accent)">🔀 Modifica eventi in blocco</h3>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px">
+      <select id="bloccoFiltroScuola" onchange="renderEventiBlocco()" style="flex:1;min-width:140px"></select>
+      <select id="bloccoFiltroAnno" onchange="renderEventiBlocco()" style="width:110px"></select>
+      <button class="btn btn-gray" onclick="selezionaTuttiBlocco()" style="font-size:12px">Seleziona tutti</button>
+    </div>
+    <div id="bloccoEventiLista" style="max-height:260px;overflow-y:auto;border:1px solid var(--border);border-radius:8px;padding:6px;margin-bottom:10px;background:var(--bg)"></div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap">
+      <select id="bloccoAzione" style="flex:1;min-width:140px">
+        <option value="scuola">Sposta a scuola</option>
+        <option value="altro">Sposta in ALTRO</option>
+      </select>
+      <select id="bloccoScuolaTarget" style="flex:1;min-width:140px"></select>
+      <button class="btn btn-blue" onclick="applicaBlocco()">✅ Applica</button>
+    </div>
+  </div>
+
+  <!-- Console comandi -->
+  <div class="card">
+    <h3 style="color:var(--accent)">💻 Console comandi batch</h3>
+    <p style="font-size:12px;color:var(--text-muted);margin-bottom:8px">
+      Comandi disponibili: <code>ricalcola_stock</code>,
+      <code>azzera_movimenti_precedenti_a_2024-01-01</code>,
+      <code>sposta_eventi_senza_scuola_in_altro</code>
+    </p>
+    <textarea id="consoleComandi" rows="4" style="font-family:'Courier New',monospace;font-size:13px" placeholder="ricalcola_stock&#10;azzera_movimenti_precedenti_a_2024-01-01"></textarea>
+    <button class="btn btn-green" onclick="eseguiComandi()" style="margin-top:8px;width:100%">â–¶️ Esegui comandi</button>
+    <div id="consoleOutput" class="console-output" style="display:none;margin-top:10px"></div>
+  </div>
+
+  <!-- Cronologia comandi -->
+  <div class="card">
+    <h3 style="color:var(--accent)">📋 Cronologia comandi</h3>
+    <div id="cronologiaComandi"></div>
+  </div>
+</div>
+
+
+<!-- ============== ESPORTA ============== -->
+<div class="pagina" id="page-esporta">
+  <h2 style="margin-bottom:14px">📤 Esporta & Backup</h2>
+
+  <div class="card" style="background:linear-gradient(135deg,var(--primary),var(--secondary));color:white;border:none">
+    <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px">
+      <div>
+        <h3 style="margin:0 0 4px 0;color:white">💾 Salvataggio su disco</h3>
+        <div style="font-size:13px;opacity:0.9">I dati sono salvati in <code>braaap_data.json</code>. Backup automatici ogni 10 modifiche in <code>backups/</code>.</div>
+      </div>
+      <button class="btn" onclick="forzaBackupOra()" style="background:white;color:var(--primary);padding:12px 24px;font-weight:800">💾 Salva ora</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <h3>📅 Filtro per anno</h3>
+    <div style="display:flex;gap:8px;align-items:center">
+      <select id="esportaAnno" style="max-width:200px">
+        <option value="">Tutti gli anni</option>
+      </select>
+      <span style="font-size:12px;color:var(--text-muted)">(si applica a eventi e magazzino)</span>
+    </div>
+  </div>
+
+  <div class="card">
+    <h3>📦 Esporta sezione singola</h3>
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:12px" id="grigliaEsporta"></div>
+  </div>
+  </div>
+
+  <div class="card">
+    <h3>📚 Export completo multi-foglio (Excel)</h3>
+    <p style="font-size:13px;color:var(--text-muted)">Un solo file .xlsx con un foglio per ogni sezione (eventi, scuole, rubrica, task, magazzino, inventario, entità, liste, portafoglio).</p>
+    <button class="btn btn-green" onclick="esportaTutto()" style="padding:14px 28px;font-weight:700">📊 Scarica Excel completo</button>
+  </div>
+
+  <div class="card" id="backupStats">
+    <h3>📊 Statistiche backup</h3>
+    <div class="grid-stats" style="grid-template-columns:repeat(auto-fit,minmax(140px,1fr))">
+      <div class="stat"><div class="num" id="statNBackup" style="color:var(--accent)">0</div><div class="label">Backup totali</div></div>
+      <div class="stat"><div class="num" id="statDimBackup" style="color:var(--accent)">0 MB</div><div class="label">Dimensione</div></div>
+      <div class="stat"><div class="num" id="statUltimoBackup" style="color:var(--accent);font-size:14px">mai</div><div class="label">Ultimo backup</div></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h3>⚡ Azioni rapide</h3>
+    <div style="display:flex;gap:8px;flex-wrap:wrap">
+      <button class="btn btn-green" onclick="forzaBackupOra()" style="font-weight:700">💾 Crea backup ora</button>
+      <input type="file" id="fileBackupUpload" accept=".json" style="display:none" onchange="caricaBackupDaFile(this.files)">
+      <button class="btn btn-blue" onclick="document.getElementById('fileBackupUpload').click()">📤 Carica da file</button>
+      <button class="btn btn-gray" onclick="pulisciBackupUI()">🧹 Pulisci vecchi</button>
+      <button class="btn btn-gray" onclick="apriCartellaBackup()">📂 Apri cartella backup</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <h3>☁️ Cartella backup extra (opzionale)</h3>
+    <p style="font-size:13px;color:var(--text-muted)">Se compilata, ogni backup viene copiato anche qui. Utile per: Google Drive, Dropbox, altra partizione, chiavetta USB.</p>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+      <input id="configCartellaExtra" placeholder="Es. C:\Users\user\Google Drive\Braaap_Backup" style="flex:1;min-width:250px">
+      <button class="btn btn-green" onclick="salvaConfigBackup()">💾 Salva</button>
+      <button class="btn btn-gray" onclick="apriCartellaExtra()">📂 Apri</button>
+    </div>
+    <div id="statoCartellaExtra" style="font-size:12px;color:var(--text-muted);margin-top:8px"></div>
+  </div>
+
+  <div class="card">
+    <h3>🗄️ Backup disponibili</h3>
+    <p style="font-size:13px;color:var(--text-muted);margin-bottom:10px">Ripristina un backup per tornare a uno stato precedente. Ogni ripristino crea automaticamente un backup di sicurezza dello stato attuale.</p>
+    <div id="listaBackup"></div>
+  </div>
+</div>
+
+<!-- ============== LOGO ============== -->
+
+<!-- ============== IMPORTA ============== -->
+<div class="pagina" id="page-importa">
+  <h2 style="margin-bottom:14px">📥 Importa</h2>
+
+  <div class="card" style="background:linear-gradient(135deg,#16a34a,#22c55e);color:white;border:none">
+    <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px">
+      <div>
+        <h3 style="margin:0 0 4px 0;color:white">📥 Importa dati da CSV o Excel</h3>
+        <div style="font-size:13px;opacity:0.9">Carica un file CSV o XLSX con le intestazioni nella prima riga. Verrà mostrata un'anteprima prima di confermare.</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h3>📥 Importa sezione singola</h3>
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:12px" id="grigliaImporta"></div>
+  </div>
+
+  <div class="card">
+    <h3>📋 Template CSV</h3>
+    <p style="font-size:13px;color:var(--text-muted)">Scarica un template CSV per ogni sezione: contiene le intestazioni corrette e una riga di esempio.</p>
+    <p style="font-size:13px;color:var(--text-muted)">💡 Suggerimento: apri il template con Excel, compila le righe, salva come CSV e importalo dalla griglia sopra.</p>
+  </div>
+
+  <div class="card">
+    <h3>📊 Formati accettati</h3>
+    <ul style="font-size:13px;line-height:1.8;margin-left:20px">
+      <li><strong>CSV</strong> — delimitatore <code>;</code> o <code>,</code> (auto-rilevato)</li>
+      <li><strong>XLSX / XLS</strong> — primo foglio del file</li>
+      <li><strong>Intestazioni</strong> — la prima riga deve contenere i nomi delle colonne</li>
+      <li><strong>Dimensione max</strong> — 200 MB per file</li>
+    </ul>
+  </div>
+</div>
+
+<div class="pagina" id="page-logo">
+  <div class="card">
+    <h2>🎨 Logo</h2>
+    <form action="/api/logo" method="POST" enctype="multipart/form-data" onsubmit="return caricaLogo(event)">
+      <input type="file" name="logo" accept="image/*" required style="margin-bottom:10px">
+      <button type="submit" class="btn btn-red">📤 Carica Logo</button>
+    </form>
+  </div>
+</div>
+
+<!-- ============== MODALI ============== -->
+<div class="modale" id="modaleEvento">
+  <div class="content wide">
+    <button class="modale-chiudi" onclick="chiudiModale('modaleEvento')">✕</button>
+    <h2 id="modaleEventoTitolo">📝 Evento</h2>
+    <input type="hidden" id="eId">
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+      <div><label>Data inizio *</label><input type="date" id="eData"></div>
+      <div><label>Durata (giorni) *</label><input type="number" id="eDurata" min="1" value="1"></div>
+      <div><label>Data fine</label><input type="date" id="eDataFine" readonly style="background:#f0f0f0"></div>
+      <div><label>Scuola (lascia vuoto per ALTRO)</label>
+        <select id="eScuola"><option value="">— Nessuna (ALTRO) —</option></select>
+      </div>
+      <div><label>Iniziativa *</label><input id="eIniziativa"></div>
+      <div><label>Luogo</label><input id="eLuogo"></div>
+      <div><label>Partecipanti</label><input type="number" id="ePartecipanti" value="0"></div>
+      <div><label>Braccialetti</label><input type="number" id="eBraccialetti" value="0"></div>
+      <div><label>Medaglie</label><input type="number" id="eMedaglie" value="0"></div>
+      <div><label>Adesivi</label><input type="number" id="eAdesivi" value="0"></div>
+      <div><label>Coppe</label><input type="number" id="eCoppe" value="0"></div>
+      <div style="grid-column:span 2"><label>Referente</label><input id="eReferente"></div>
+      <div style="grid-column:span 2;display:grid;grid-template-columns:1fr 1fr;gap:10px">
+        <div><label>📞 Telefono referente</label><input id="eReferenteTel" placeholder="3331234567"></div>
+        <div><label>âœ‰️ Email referente</label><input id="eReferenteEmail" placeholder="mario@example.com" type="email"></div>
+      </div>
+      <div style="grid-column:span 2">
+        <button type="button" class="btn btn-blue" onclick="aggiungiReferenteARubrica()" style="padding:6px 14px;font-size:13px">➕ Aggiungi a Rubrica</button>
+      </div>
+      <div style="grid-column:span 2"><label>Nota di carico</label><textarea id="eNotaCarico" data-correttore="true" rows="2"></textarea></div>
+      <div style="grid-column:span 2"><label>Note</label><textarea id="eNote" data-correttore="true" rows="2"></textarea></div>
+      <div style="grid-column:span 2" id="sezioneFotoEvento">
+        <label>📸 Foto dell'evento</label>
+        <div id="dropZoneFoto" class="drop-zone-foto" onclick="document.getElementById('inputFotoEvento').click()">
+          <div style="font-size:32px;margin-bottom:6px">📁</div>
+          <div><strong>Trascina qui foto o video</strong> oppure clicca per scegliere</div>
+          <div style="font-size:11px;color:var(--text-muted);margin-top:4px">JPG, PNG, WEBP, HEIC, MP4, MOV, WEBM — max 50 MB cad.</div>
+        </div>
+        <input type="file" id="inputFotoEvento" accept="image/*,video/*" multiple style="display:none" onchange="caricaFotoEvento(this.files)">
+        <div id="listaFotoEvento" class="lista-foto-evento"></div>
+      </div>
+
+      <!-- SEZIONE COSTI E RICAVI -->
+      <div style="margin-top:14px">
+        <h3 style="color:#DC2626;margin-bottom:8px">💸 Uscite (quello che hai pagato)</h3>
+        <div id="listaCostiEvento" style="margin-bottom:8px"></div>
+        <button type="button" class="btn btn-gray" onclick="aggiungiVoceCosto()" style="padding:6px 12px;font-size:13px">+ Aggiungi uscita</button>
+        <div style="text-align:right;margin-top:8px;font-weight:700;color:#DC2626">Totale uscite: <span id="totaleCostiEvento">0,00 €</span></div>
+      </div>
+
+      <div style="margin-top:14px">
+        <h3 style="color:#16A34A;margin-bottom:8px">💰 Entrate (quello che hai incassato)</h3>
+        <div id="listaRicaviEvento" style="margin-bottom:8px"></div>
+        <button type="button" class="btn btn-gray" onclick="aggiungiVoceRicavo()" style="padding:6px 12px;font-size:13px">+ Aggiungi entrata</button>
+        <div style="text-align:right;margin-top:8px;font-weight:700;color:#16A34A">Totale entrate: <span id="totaleRicaviEvento">0,00 €</span></div>
+      </div>
+
+      <div style="margin-top:14px;padding:12px;background:var(--bg);border-radius:10px;text-align:center">
+        <div style="font-size:12px;color:var(--text-muted);margin-bottom:4px">MARGINE EVENTO</div>
+        <div id="margineEvento" style="font-size:24px;font-weight:800">0,00 €</div>
+      </div>
+
+
+    </div>
+    <div style="display:flex;gap:8px;margin-top:14px">
+      <button class="btn btn-green" onclick="salvaEvento()" style="flex:1">💾 Salva</button>
+      <button class="btn btn-red" id="btnEliminaEventoModale" onclick="eliminaEventoDaModale()" style="display:none">🗑️</button>
+      <button class="btn btn-gray" onclick="chiudiModale('modaleEvento')" style="flex:1">❌ Annulla</button>
+    </div>
+  </div>
+</div>
+
+<div class="modale" id="modaleScuola">
+  <div class="content">
+    <button class="modale-chiudi" onclick="chiudiModale('modaleScuola')">✕</button>
+    <h2 id="modaleScuolaTitolo">🏫 Scuola</h2>
+    <input type="hidden" id="scuolaId">
+    <input id="scuolaNome" placeholder="Nome *" style="margin-bottom:6px">
+    <input id="scuolaTipo" placeholder="Tipo (Scuola, Azienda, ...)" style="margin-bottom:6px">
+    <input id="scuolaRef" placeholder="Referente" style="margin-bottom:6px">
+    <input id="scuolaTel" placeholder="Telefono" style="margin-bottom:6px">
+    <input id="scuolaEmail" placeholder="Email" style="margin-bottom:6px">
+    <label style="font-size:12px;font-weight:700;color:#37474F;display:block;margin-top:8px">Note</label>
+    <textarea id="scuolaNote" data-correttore="true" rows="2" placeholder="Note aggiuntive..."></textarea>
+    <div style="display:flex;gap:8px">
+      <button class="btn btn-green" onclick="salvaScuola()" style="flex:1">💾 Salva</button>
+      <button class="btn btn-red" id="btnEliminaScuolaModale" onclick="eliminaScuolaDaModale()" style="display:none">🗑️</button>
+      <button class="btn btn-gray" onclick="chiudiModale('modaleScuola')" style="flex:1">❌ Annulla</button>
+    </div>
+    <div id="scuolaDettaglioEventi" style="display:none;margin-top:16px;padding:12px;background:#f5f7fa;border-radius:10px">
+      <h3 style="margin:0 0 8px;color:#0288D1;font-size:14px">📅 Eventi collegati</h3>
+      <div id="scuolaEventiLista" style="max-height:200px;overflow-y:auto"></div>
+    </div>
+  </div>
+</div>
+
+<div class="modale" id="modaleTask">
+  <div class="content">
+    <button class="modale-chiudi" onclick="chiudiModale('modaleTask')">✕</button>
+    <h2 id="modaleTaskTitolo">✅ Task</h2>
+    <input type="hidden" id="taskId">
+    <label>Titolo *</label>
+    <input id="taskTitolo" style="margin-bottom:8px">
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+      <div><label>Categoria</label>
+        <select id="taskCategoria">
+          <option value="generale">Generale</option>
+          <option value="braccialetti">Braccialetti</option>
+          <option value="medaglie">Medaglie</option>
+          <option value="adesivi">Adesivi</option>
+          <option value="coppe">Coppe</option>
+          <option value="gadgets">Gadgets</option>
+        </select>
+      </div>
+      <div><label>Scadenza</label><input type="date" id="taskScadenza"></div>
+      <div><label>Priorità</label>
+        <select id="taskPriorita">
+          <option value="alta">Alta</option>
+          <option value="media" selected>Media</option>
+          <option value="bassa">Bassa</option>
+        </select>
+      </div>
+      <div><label>Stato</label>
+        <select id="taskStato">
+          <option value="da_fare">Da fare</option>
+          <option value="in_lavorazione">In lavorazione</option>
+          <option value="completato">Completato</option>
+        </select>
+      </div>
+    </div>
+    <label style="margin-top:8px;display:block">Note</label>
+    <textarea id="taskNote" data-correttore="true" rows="3"></textarea>
+    <label style="margin-top:8px;display:block">Referente</label>
+    <input id="taskReferente">
+    <div style="display:flex;gap:8px;margin-top:14px">
+      <button class="btn btn-green" onclick="salvaTask()" style="flex:1">💾 Salva</button>
+      <button class="btn btn-red" id="btnEliminaTaskModale" onclick="eliminaTaskDaModale()" style="display:none">🗑️</button>
+      <button class="btn btn-gray" onclick="chiudiModale('modaleTask')" style="flex:1">❌ Annulla</button>
+    </div>
+  </div>
+</div>
+
+<div class="modale" id="modaleContatto">
+  <div class="content">
+    <button class="modale-chiudi" onclick="chiudiModale('modaleContatto')">✕</button>
+    <h2 id="modaleContattoTitolo">📞 Contatto</h2>
+    <input type="hidden" id="contattoId">
+    <label>Nome</label><input id="contattoNome" style="margin-bottom:8px">
+    <label>Telefono</label><input id="contattoTel" style="margin-bottom:8px">
+    <label>Email</label><input id="contattoEmail" style="margin-bottom:8px">
+    <label>Scuola</label><select id="contattoScuola" style="margin-bottom:8px"><option value="">—</option></select>
+    <label>Ruolo</label><input id="contattoRuolo" style="margin-bottom:8px">
+    <label>Note</label><textarea id="contattoNote" data-correttore="true" rows="2"></textarea>
+    <div style="display:flex;gap:8px;margin-top:14px">
+      <button class="btn btn-green" onclick="salvaContatto()" style="flex:1">💾 Salva</button>
+      <button class="btn btn-red" id="btnEliminaContattoModale" onclick="eliminaContattoDaModale()" style="display:none">🗑️</button>
+      <button class="btn btn-gray" onclick="chiudiModale('modaleContatto')" style="flex:1">❌ Annulla</button>
+    </div>
+  </div>
+</div>
+
+<div class="modale" id="modaleInventario">
+  <div class="content">
+    <button class="modale-chiudi" onclick="chiudiModale('modaleInventario')">✕</button>
+    <h2 id="modaleInventarioTitolo">🧰 Oggetto</h2>
+    <input type="hidden" id="invId">
+    <label>Nome *</label><input id="invNome" style="margin-bottom:8px">
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+      <div><label>Quantità</label><input type="number" id="invQuantita" value="1" min="1" oninput="aggiornaTotaleInventario()"></div>
+      <div><label>Valore unitario (€)</label><input type="number" step="0.01" id="invValoreUnit" value="0" oninput="aggiornaTotaleInventario()"></div>
+      <div><label>Valore totale (auto)</label><input type="text" id="invValoreTot" readonly style="background:#f0f0f0;font-weight:700;color:#16A34A"></div>
+      <div><label>Data acquisto</label><input type="date" id="invDataAcquisto"></div>
+      <div><label>Stato</label>
+        <select id="invStato">
+          <option value="funzionante">Funzionante</option>
+          <option value="riparare">Da riparare</option>
+          <option value="sostituire">Da sostituire</option>
+        </select>
+      </div>
+    </div>
+    <label style="margin-top:8px;display:block">Nota di carico</label><textarea id="invNotaCarico" data-correttore="true" rows="2"></textarea>
+    <label style="margin-top:8px;display:block">Note</label><textarea id="invNote" data-correttore="true" rows="2"></textarea>
+    <div style="display:flex;gap:8px;margin-top:14px">
+      <button class="btn btn-green" onclick="salvaInventario()" style="flex:1">💾 Salva</button>
+      <button class="btn btn-red" id="btnEliminaInventarioModale" onclick="eliminaInventarioDaModale()" style="display:none">🗑️</button>
+      <button class="btn btn-gray" onclick="chiudiModale('modaleInventario')" style="flex:1">❌ Annulla</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODALE ENTITÀ DINAMICA -->
+<div class="modale" id="modaleEntita">
+  <div class="content wide">
+    <button class="modale-chiudi" onclick="chiudiModale('modaleEntita')">✕</button>
+    <h2 id="modaleEntitaTitolo">📦 Materiale</h2>
+    <input type="hidden" id="entitaId">
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+      <div><label>Nome *</label><input id="entNome"></div>
+      <div><label>Categoria *</label>
+        <select id="entCategoria"></select>
+      </div>
+      <div><label>Quantità</label><input type="number" id="entQuantita" value="1"></div>
+      <div><label>Data carico</label><input type="date" id="entDataCarico"></div>
+      <div><label>Costo unitario (€)</label><input type="number" id="entCostoUnitario" step="0.01" value="0"></div>
+      <div><label>Fornitore</label><input id="entFornitore"></div>
+      <div><label>Condizione</label>
+        <select id="entCondizione">
+          <option value="nuovo">Nuovo</option>
+          <option value="usato">Usato</option>
+          <option value="in stock">In stock</option>
+          <option value="da verificare">Da verificare</option>
+        </select>
+      </div>
+      <div><label>Manutenzione prevista</label>
+        <select id="entManutenzione">
+          <option value="">No</option>
+          <option value="annuale">Annuale</option>
+          <option value="semestrale">Semestrale</option>
+          <option value="trimestrale">Trimestrale</option>
+          <option value="mensile">Mensile</option>
+        </select>
+      </div>
+    </div>
+    <label style="margin-top:8px;display:block">Note</label>
+    <textarea id="entNote" data-correttore="true" rows="2"></textarea>
+    <div style="display:flex;gap:8px;margin-top:14px">
+      <button class="btn btn-green" onclick="salvaEntita()" style="flex:1">💾 Salva</button>
+      <button class="btn btn-red" id="btnEliminaEntitaModale" onclick="eliminaEntitaDaModale()" style="display:none">🗑️</button>
+      <button class="btn btn-gray" onclick="chiudiModale('modaleEntita')" style="flex:1">❌ Annulla</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODALE ANTEPRIMA ELABORA -->
+<div class="modale" id="modaleElaboraAnteprima">
+  <div class="content wide">
+    <button class="modale-chiudi" onclick="chiudiModale('modaleElaboraAnteprima')">✕</button>
+    <h2>🧠 Anteprima elaborazione</h2>
+    <p style="color:var(--text-muted);font-size:13px">Controlla cosa ho capito. Correggi se serve, poi conferma.</p>
+    <div id="elaboraAnteprimaContenuto"></div>
+    <div style="display:flex;gap:8px;margin-top:14px">
+      <button class="btn btn-green" onclick="confermaElaborazione()" style="flex:1">✅ CONFERMA E SALVA</button>
+      <button class="btn btn-gray" onclick="chiudiModale('modaleElaboraAnteprima')" style="flex:1">❌ Annulla</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODALE POST-IT -->
+<div class="modale" id="modalePostit">
+  <div class="content">
+    <button class="modale-chiudi" onclick="chiudiModale('modalePostit')">✕</button>
+    <h2 id="modalePostitTitolo">📌 Post-it</h2>
+    <input type="hidden" id="postitId">
+    <label>Contenuto</label>
+    <textarea id="postitTesto" data-correttore="true" rows="6" style="font-family:'Segoe Script','Comic Sans MS',cursive;font-size:15px"></textarea>
+    <label style="margin-top:8px;display:block">Colore</label>
+    <select id="postitColore">
+      <option value="giallo">🟡 Giallo</option>
+      <option value="rosa">🩷 Rosa</option>
+      <option value="azzurro">🔵 Azzurro</option>
+      <option value="verde">🟢 Verde</option>
+      <option value="lilla">🟣 Lilla</option>
+      <option value="arancione">🟠 Arancione</option>
+    </select>
+    <div style="display:flex;gap:8px;margin-top:14px">
+      <button class="btn btn-green" onclick="salvaPostit()" style="flex:1">💾 Salva</button>
+      <button class="btn btn-blue" onclick="elaboraPostitDaModale()" style="flex:1">⚡ Elabora</button>
+      <button class="btn btn-gray" onclick="chiudiModale('modalePostit')" style="flex:1">❌ Annulla</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODALE LISTA -->
+<div class="modale" id="modaleLista">
+  <div class="content">
+    <button class="modale-chiudi" onclick="chiudiModale('modaleLista')">✕</button>
+    <h2 id="modaleListaTitolo">🛒 Lista</h2>
+    <input type="hidden" id="listaId">
+    <label>Nome lista *</label>
+    <input id="listaNome" placeholder="Es. Spesa settimanale" style="margin-bottom:10px">
+    <label>Prodotti (uno per riga)</label>
+    <textarea id="listaProdotti" rows="8" placeholder="pane&#10;latte&#10;uova"></textarea>
+    <div style="display:flex;gap:8px;margin-top:14px">
+      <button class="btn btn-green" onclick="salvaLista()" style="flex:1">💾 Salva</button>
+      <button class="btn btn-gray" onclick="chiudiModale('modaleLista')" style="flex:1">❌ Annulla</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODALE SOGLIE -->
+<div class="modale" id="modaleSoglie">
+  <div class="content">
+    <button class="modale-chiudi" onclick="chiudiModale('modaleSoglie')">✕</button>
+    <h2>âš™️ Soglie di scorta</h2>
+    <p style="font-size:13px;color:var(--text-muted)">Sotto queste soglie il widget Stock ti avviserà.</p>
+    <label>Braccialetti</label><input type="number" id="sogliaBracc" style="margin-bottom:8px">
+    <label>Medaglie</label><input type="number" id="sogliaMed" style="margin-bottom:8px">
+    <label>Adesivi</label><input type="number" id="sogliaAdes" style="margin-bottom:8px">
+    <label>Coppe</label><input type="number" id="sogliaCoppe" style="margin-bottom:8px">
+    <div style="display:flex;gap:8px;margin-top:14px">
+      <button class="btn btn-green" onclick="salvaSoglie()" style="flex:1">💾 Salva</button>
+      <button class="btn btn-gray" onclick="chiudiModale('modaleSoglie')" style="flex:1">❌ Annulla</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODALE GIACENZA (post-primo-avvio) -->
+<div class="modale" id="modaleGiacenza">
+  <div class="content">
+    <button class="modale-chiudi" onclick="chiudiModale('modaleGiacenza')">✕</button>
+    <h2>âš™️ Modifica giacenza iniziale</h2>
+    <p style="font-size:13px;color:var(--text-muted)">Questo <strong>sostituisce</strong> tutti i movimenti precedenti con un singolo carico datato oggi.</p>
+    <label>Braccialetti</label><input type="number" id="mgBracc" value="0" style="margin-bottom:8px">
+    <label>Medaglie</label><input type="number" id="mgMed" value="0" style="margin-bottom:8px">
+    <label>Adesivi</label><input type="number" id="mgAdes" value="0" style="margin-bottom:8px">
+    <label>Coppe</label><input type="number" id="mgCoppe" value="0" style="margin-bottom:8px">
+    <div style="display:flex;gap:8px;margin-top:14px">
+      <button class="btn btn-red" onclick="salvaGiacenza()" style="flex:1">âš ️ Conferma modifica</button>
+      <button class="btn btn-gray" onclick="chiudiModale('modaleGiacenza')" style="flex:1">❌ Annulla</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODALE REVISIONE VOCALE -->
+<div class="modale" id="modaleRevisioneVocale">
+  <div class="content">
+    <button class="modale-chiudi" onclick="chiudiModaleRevisione()">✕</button>
+    <h2>🎧 Revisione registrazione</h2>
+    <p style="font-size:13px;color:var(--text-muted);margin-bottom:12px">
+      Riascolta, correggi se serve, poi invia per la trascrizione.
+    </p>
+
+    <div class="review-player">
+      <div class="review-tempo" id="reviewTempo">0:00 / 0:00</div>
+      <div class="review-controlli">
+        <button class="review-btn salta" id="btnReviewIndietro"
+                onmousedown="reviewIniziaHold(-1)" onmouseup="reviewFermaHold()"
+                onmouseleave="reviewFermaHold()" ontouchstart="reviewIniziaHold(-1)"
+                ontouchend="reviewFermaHold()" title="Tap: -3s | Tieni premuto: scorri indietro">
+          ⏪
+        </button>
+        <button class="review-btn play" id="btnReviewPlay" onclick="reviewPlayPausa()">
+          â–¶️
+        </button>
+        <button class="review-btn salta" id="btnReviewAvanti"
+                onmousedown="reviewIniziaHold(1)" onmouseup="reviewFermaHold()"
+                onmouseleave="reviewFermaHold()" ontouchstart="reviewIniziaHold(1)"
+                ontouchend="reviewFermaHold()" title="Tap: +3s | Tieni premuto: scorri avanti">
+          ⏩
+        </button>
+      </div>
+      <div class="review-bar"><div class="review-bar-fill" id="reviewBarFill"></div></div>
+      <audio id="audioReview" style="display:none"></audio>
+    </div>
+
+    <label style="font-size:12px;font-weight:600">Testo trascritto (modificabile)</label>
+    <textarea id="reviewTestoTrascritto" data-correttore="true" class="review-trascrizione"
+              placeholder="Qui apparira' il testo trascritto dopo l'invio..."></textarea>
+    <div class="review-stato-trasc" id="reviewStatoTrasc"></div>
+
+    <div class="review-azioni">
+      <button class="btn-invia-voce" id="btnReviewInvia" onclick="reviewInvia()">
+        ✅ Invia e trascrivi
+      </button>
+      <button class="btn-riscrivi-voce" onclick="reviewRiscrivi()">
+        🔁 Riscrivi
+      </button>
+      <button class="btn-scarta-voce" onclick="reviewScarta()">
+        🗑️ Scarta
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- PLAYER VOCALE FISSO -->
+<div class="player-fisso" id="playerFisso">
+  <div class="player-fisso-inner">
+    <button class="player-btn" id="pfIndietro" onmousedown="pfIniziaHold(-1)" onmouseup="pfFermaHold()" onmouseleave="pfFermaHold()" title="Tap: nota precedente | Hold: scorri indietro">\u23EA</button>
+    <button class="player-btn play" id="pfPlay" onclick="pfPlayPausa()">\u25B6\uFE0F</button>
+    <button class="player-btn" id="pfAvanti" onmousedown="pfIniziaHold(1)" onmouseup="pfFermaHold()" onmouseleave="pfFermaHold()" title="Tap: nota successiva | Hold: scorri avanti">\u23E9</button>
+    <div class="player-tempo" id="pfTempo">0:00 / 0:00</div>
+    <div class="player-bar"><div class="player-bar-fill" id="pfBarFill"></div></div>
+    <div class="player-nota-info" id="pfNotaInfo">Nessuna nota</div>
+    <button class="player-chiudi" onclick="pfChiudi()">\u2715</button>
+  </div>
+  <audio id="pfAudio" style="display:none"></audio>
+</div>
+
+<div class="modale" id="modaleConfermaUscita" style="z-index:1300">
+  <div class="content" style="max-width:400px;text-align:center">
+    <h3>Uscire senza salvare?</h3>
+    <div style="display:flex;flex-direction:column;gap:8px;margin-top:14px">
+      <button class="btn btn-green" id="btnConfermaSalva">💾 Salva</button>
+      <button class="btn btn-red" id="btnConfermaScarta">🗑️ Scarta</button>
+      <button class="btn btn-gray" id="btnConfermaAnnulla">â†©️ Continua</button>
+    </div>
+  </div>
+</div>
+
+<div class="slideshow-overlay" id="slideshowOverlay">
+  <button class="slideshow-chiudi" onclick="chiudiSlideshow()">✕</button>
+  <img id="slideshowImg" src="">
+</div>
+
+
+<script src="/static/app.js">
+
+
+</script>
+  <script src="/static/bilancio_patch.js"></script>
+
+
+<!-- ============== MODALE MOVIMENTO ============== -->
+<div class="modale" id="modaleMovimento">
+  <div class="content">
+    <button class="modale-chiudi" onclick="chiudiModale('modaleMovimento')">✕</button>
+    <h2 id="modaleMovTitolo">âœ️ Movimento</h2>
+    <input type="hidden" id="movId">
+    <input type="hidden" id="movCatOld">
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+      <div><label>Tipo *</label>
+        <select id="movTipo">
+          <option value="carico">Carico</option>
+          <option value="scarico">Scarico</option>
+        </select>
+      </div>
+      <div><label>Categoria *</label>
+        <select id="movCategoria">
+          <option value="braccialetti">Braccialetti</option>
+          <option value="medaglie">Medaglie</option>
+          <option value="adesivi">Adesivi</option>
+          <option value="coppe">Coppe</option>
+        </select>
+      </div>
+      <div><label>Quantità *</label><input type="number" min="1" id="movQuantita"></div>
+      <div><label>Prezzo Unit. (€)</label><input type="number" step="0.01" id="movPrezzoUnit" value="0"></div>
+      <div><label>Data</label><input type="date" id="movData"></div>
+      <div style="grid-column:span 2"><label>Motivo</label><input id="movMotivo"></div>
+      <div style="grid-column:span 2"><label>Nota di carico</label><input id="movNota"></div>
+    </div>
+    <div style="display:flex;gap:8px;margin-top:14px">
+      <button class="btn btn-green" onclick="salvaMovimento()" style="flex:1">💾 Salva</button>
+      <button class="btn btn-gray" onclick="chiudiModale('modaleMovimento')" style="flex:1">❌ Annulla</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============== BOTTONI FLOTTANTI ============== -->
+<div id="btnNuovoEvento" class="fab fab-destra" onclick="apriModaleEvento()" title="Nuovo Evento">
+  <span class="fab-icona">&#10133;</span>
+  <span class="fab-label">Nuovo Evento</span>
+</div>
+
+<div id="btnChatBraaap" class="fab fab-sinistra" onclick="toggleChat()" title="Chatta con Braaap">
+  <span class="fab-icona">&#128172;</span>
+  <span class="fab-label">Chatta con Braaap</span>
+</div>
+
+<!-- ============== PANNELLO CHAT ============== -->
+<div id="chatBraaap" class="chat-panel">
+  <div class="chat-header">
+    <div style="display:flex;align-items:center;gap:10px">
+      <span style="font-size:22px">&#129302;</span>
+      <div>
+        <div style="font-weight:700;font-size:15px">Braaap Assistant</div>
+        <div style="font-size:11px;opacity:0.7">Chiedimi qualcosa sui tuoi dati</div>
+      </div>
+    </div>
+    <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;justify-content:flex-end">
+      <select id="chatVoceSelect" onchange="cambiaVoce()" title="Scegli la voce" style="background:rgba(255,255,255,0.15);border:none;color:white;font-size:12px;cursor:pointer;padding:6px 8px;border-radius:20px;max-width:140px">
+        <option value="auto">&#127908; Auto</option>
+      </select>
+      <button id="chatBtnAuto" onclick="toggleAutoLettura()" title="Lettura automatica risposte" style="background:rgba(255,255,255,0.15);border:none;color:white;font-size:13px;cursor:pointer;padding:6px 10px;border-radius:20px;display:flex;align-items:center;gap:4px">&#128266; Auto</button>
+      <button id="chatBtnVocab" onclick="apriVocabolario()" title="Vocabolario" style="background:rgba(255,255,255,0.15);border:none;color:white;font-size:14px;cursor:pointer;padding:6px 10px;border-radius:20px">&#128218;</button>
+      <button id="chatBtnReset" onclick="resetChat()" title="Nuova chat (cancella contesto)" style="background:rgba(255,255,255,0.15);border:none;color:white;font-size:14px;cursor:pointer;padding:6px 10px;border-radius:20px;display:flex;align-items:center;gap:4px">&#128260;</button>
+      <button onclick="toggleChat()" style="background:none;border:none;color:white;font-size:20px;cursor:pointer;padding:4px">&#10005;</button>
+    </div>
+  </div>
+  <div id="chatMessaggi" class="chat-messaggi">
+    <div class="chat-bolla chat-bot">
+      Ciao! Sono il tuo assistente Braaap. Posso rispondere a domande su magazzino, eventi, scuole, task e bilancio. Cosa ti serve?
+    </div>
+  </div>
+  <div class="chat-pulsanti-rapidi">
+    <button onclick="mostraDashboard('panoramica')" title="Panoramica generale">📊 Panoramica</button>
+    <button onclick="mostraDashboard('eventi')" title="Eventi futuri">📅 Eventi</button>
+    <button onclick="mostraDashboard('magazzino')" title="Stock magazzino">📦 Magazzino</button>
+    <button onclick="mostraDashboard('task')" title="Task aperti">✅ Task</button>
+    <button onclick="mostraDashboard('bilancio')" title="Bilancio totale">💰 Bilancio</button>
+  </div>
+  <div class="chat-input-area">
+    <button id="chatBtnMic" onclick="toggleRegistrazioneChat()" title="Parla" style="background:linear-gradient(135deg,#16A34A 0%,#15803D 100%)">&#127908;</button>
+    <input id="chatInput" type="text" placeholder="Scrivi o parla..." onkeydown="if(event.key==='Enter' && !event.shiftKey){event.preventDefault();inviaChat()}" />
+    <button onclick="inviaChat()" id="chatBtnInvia">&#10148;</button>
+  </div>
+</div>
+
+<!-- ============== STORICO ============== -->
+<div class="pagina" id="page-storico">
+  <h2 style="margin-bottom:14px">&#128202; Storico per anno</h2>
+
+  <div class="card" style="margin-bottom:14px">
+    <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+      <label style="font-weight:700;color:#37474F">Anno:</label>
+      <select id="storicoAnnoSelect" style="font-size:16px;padding:8px 12px;border:2px solid #0288D1;border-radius:8px" onchange="caricaStorico(this.value)">
+        <option value="">— Seleziona un anno —</option>
+      </select>
+      <button class="btn btn-gray" onclick="esportaStorico()" style="margin-left:auto">&#128229; Esporta</button>
+    </div>
+  </div>
+
+  <div id="storicoContenuto">
+    <div style="text-align:center;color:var(--text-muted);padding:40px">Seleziona un anno per vedere le statistiche</div>
+  </div>
+</div>
+
+<!-- ============== BILANCIO ANNUALE ============== -->
+<div class="pagina" id="page-bilancio">
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;flex-wrap:wrap;gap:10px">
+    <h2 style="margin:0">&#128176; Bilancio annuale</h2>
+    <div style="display:flex;gap:8px">
+      <button class="btn btn-green" onclick="apriModaleEntrata()">&#10133; Entrata</button>
+      <button class="btn btn-red" onclick="apriModaleUscita()">&#10133; Uscita</button>
+      <button type="button" class="btn btn-blue" onclick="window.print()">&#128424;&#65039; Stampa / Salva PDF</button>
+    </div>
+  </div>
+
+  <div style="background:#f8fafc;border:1px solid #cbd5e1;border-radius:12px;padding:12px;margin-bottom:16px">
+    <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+      <input id="bilCercaInput" placeholder="&#128269; Cerca ovunque (es. scuola, materiale, medaglie, data, importo)..." style="flex:1;min-width:220px;margin:0" onkeyup="if(event.key==='Enter') eseguiRicercaBilancino()">
+      <button class="btn btn-blue" onclick="eseguiRicercaBilancino()">&#128269; Cerca</button>
+      <button class="btn btn-gray" id="btnPulisciCercaBil" style="display:none" onclick="pulisciRicercaBilancino()">? Chiudi ricerca</button>
+    </div>
+    <div id="bilCercaRisultati" style="display:none;margin-top:12px"></div>
+  </div>
+  <div id="bilancioContenuto">
+    <div style="text-align:center;color:var(--text-muted);padding:40px">
+      Seleziona un anno dal selettore in alto per vedere il bilancio
+    </div>
+  </div>
+</div>
+
+<!-- Modale Entrata -->
+<div class="modale" id="modaleEntrata">
+  <div class="content" style="max-width:500px">
+    <button class="modale-chiudi" onclick="chiudiModale('modaleEntrata')">&#10005;</button>
+    <h2 id="modaleEntrataTitolo">&#128176; Nuova Entrata</h2>
+    <input type="hidden" id="entrataId">
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+      <div><label>Data</label><input type="date" id="entrataData"></div>
+      <div><label>Importo (&#8364;) *</label><input type="number" step="0.01" id="entrataImporto"></div>
+      <div style="grid-column:1/-1"><label>Descrizione *</label><input id="entrataDescrizione" placeholder="Es. Contributo scuola Pascoli"></div>
+      <div>
+        <label>Tipo</label>
+        <select id="entrataTipo">
+          <option value="contributo">Contributo</option>
+          <option value="sponsor">Sponsor</option>
+          <option value="vendita">Vendita</option>
+          <option value="rimborso">Rimborso</option>
+          <option value="altro">Altro</option>
+        </select>
+      </div>
+      <div><label>Note</label><input id="entrataNote"></div>
+    </div>
+    <div style="display:flex;gap:8px;margin-top:14px">
+      <button class="btn btn-green" onclick="salvaEntrata()" style="flex:1">&#128190; Salva</button>
+      <button class="btn btn-gray" onclick="chiudiModale('modaleEntrata')" style="flex:1">&#10060; Annulla</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modale Uscita -->
+<div class="modale" id="modaleUscita">
+  <div class="content" style="max-width:600px">
+    <button class="modale-chiudi" onclick="chiudiModale('modaleUscita')">&#10005;</button>
+    <h2>&#128184; Nuova Uscita</h2>
+    <p style="color:var(--text-muted);font-size:13px;margin-bottom:14px">
+      Scegli la categoria giusta per evitare doppie registrazioni nel bilancio.
+    </p>
+
+    <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-bottom:16px">
+      <label style="display:flex;align-items:center;gap:8px;padding:12px;border:2px solid #e0e6eb;border-radius:10px;cursor:pointer;background:white" onclick="selezionaCategoriaUscita('magazzino', this)">
+        <input type="radio" name="catUscita" value="magazzino" style="width:auto">
+        <div>
+          <div style="font-weight:700">&#128230; Magazzino</div>
+          <div style="font-size:11px;color:var(--text-muted)">Gadgets (braccialetti, medaglie...)</div>
+        </div>
+      </label>
+      <label style="display:flex;align-items:center;gap:8px;padding:12px;border:2px solid #e0e6eb;border-radius:10px;cursor:pointer;background:white" onclick="selezionaCategoriaUscita('inventario', this)">
+        <input type="radio" name="catUscita" value="inventario" style="width:auto">
+        <div>
+          <div style="font-weight:700">&#129520; Inventario</div>
+          <div style="font-size:11px;color:var(--text-muted)">Beni durevoli (gazebo, tavoli...)</div>
+        </div>
+      </label>
+      <label style="display:flex;align-items:center;gap:8px;padding:12px;border:2px solid #e0e6eb;border-radius:10px;cursor:pointer;background:white" onclick="selezionaCategoriaUscita('materiali', this)">
+        <input type="radio" name="catUscita" value="materiali" style="width:auto">
+        <div>
+          <div style="font-weight:700">&#127873; Materiali</div>
+          <div style="font-size:11px;color:var(--text-muted)">Consumo (capocorda, filo...)</div>
+        </div>
+      </label>
+      <label style="display:flex;align-items:center;gap:8px;padding:12px;border:2px solid #e0e6eb;border-radius:10px;cursor:pointer;background:white" onclick="selezionaCategoriaUscita('altro', this)">
+        <input type="radio" name="catUscita" value="altro" style="width:auto">
+        <div>
+          <div style="font-weight:700">&#128184; Altro</div>
+          <div style="font-size:11px;color:var(--text-muted)">Generico (vitto, trasporti...)</div>
+        </div>
+      </label>
+    </div>
+
+    <div id="formUscitaDettagli" style="display:none">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+        <div><label>Data</label><input type="date" id="uscitaData"></div>
+        <div><label>Importo (&#8364;) *</label><input type="number" step="0.01" id="uscitaImporto"></div>
+        <div style="grid-column:1/-1"><label>Descrizione *</label><input id="uscitaDescrizione" placeholder="Es. Acquisto 1000 braccialetti"></div>
+        <div><label>Quantità</label><input type="number" id="uscitaQuantita" placeholder="0"></div>
+        <div><label>Costo unitario (&#8364;)</label><input type="number" step="0.01" id="uscitaCostoUnitario" placeholder="0"></div>
+        <div style="grid-column:1/-1"><label>Fornitore / Note</label><input id="uscitaNote"></div>
+      </div>
+      <div style="display:flex;gap:8px;margin-top:14px">
+        <button class="btn btn-green" onclick="salvaUscita()" style="flex:1">&#128190; Salva</button>
+        <button class="btn btn-gray" onclick="chiudiModale('modaleUscita')" style="flex:1">&#10060; Annulla</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============== GALLERIA ============== -->
+<div class="pagina" id="page-galleria">
+  <h2 style="margin-bottom:14px">&#128248; Galleria</h2>
+
+  <div class="card" style="margin-bottom:14px">
+    <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+      <input id="galleriaTag" placeholder="🔍 Cerca per tag..." style="flex:1;min-width:200px">
+      <select id="galleriaTipo" style="width:150px">
+        <option value="">Tutti i media</option>
+        <option value="foto">Solo foto</option>
+        <option value="video">Solo video</option>
+      </select>
+      <button id="btnCercaGalleria" class="btn btn-blue" onclick="caricaGalleria()" style="padding:8px 18px;font-weight:700">🔍 Cerca</button>
+    </div>
+  </div>
+
+  <div id="galleriaContenuto" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px">
+    <div style="grid-column:1/-1;text-align:center;color:var(--text-muted);padding:30px">Caricamento...</div>
+  </div>
+</div>
+
+<!-- ============== MODALE RICERCA GLOBALE ============== -->
+<div class="modale" id="modaleRicercaGlobale">
+  <div class="content wide" style="max-width:800px">
+    <button class="modale-chiudi" onclick="chiudiModale('modaleRicercaGlobale')">✕</button>
+    <h2 style="margin-top:0">&#128269; Cerca in tutto il sito</h2>
+
+    <div style="position:relative;margin-bottom:14px">
+      <input id="ricercaGlobaleInput" type="text" placeholder="Cerca eventi, scuole, contatti, task, movimenti, media, tag..."
+             oninput="eseguiRicercaGlobale(this.value)"
+             style="width:100%;padding:14px 16px;font-size:16px;border:2px solid #0288D1;border-radius:10px;outline:none"
+             autocomplete="off">
+      <span style="position:absolute;right:14px;top:50%;transform:translateY(-50%);color:#90A4AE;font-size:12px">Ctrl+K</span>
+    </div>
+
+    <div id="ricercaGlobaleRisultati" style="max-height:60vh;overflow-y:auto">
+      <div style="text-align:center;color:var(--text-muted);padding:30px">
+        Digita per cercare in eventi, scuole, contatti, task, movimenti, inventario, materiali e media.
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============== MODALE IMPORT UNIVERSALE ============== -->
+<div id="modaleImportUniversale" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.5);z-index:9999;align-items:center;justify-content:center">
+  <div style="background:white;border-radius:16px;max-width:800px;width:90%;max-height:90vh;display:flex;flex-direction:column;box-shadow:0 20px 60px rgba(0,0,0,0.3)">
+    <div style="padding:20px;border-bottom:1px solid #e2e8f0;display:flex;justify-content:space-between;align-items:center">
+      <h2 id="modaleImportTitolo" style="margin:0;font-size:18px">Importa</h2>
+      <button onclick="chiudiModaleImport()" style="background:none;border:none;font-size:24px;cursor:pointer;color:#64748b">×</button>
+    </div>
+    <div id="modaleImportBody" style="padding:20px;overflow-y:auto;flex:1"></div>
+    <div id="modaleImportFooter" style="padding:12px 20px;border-top:1px solid #e2e8f0"></div>
+    <div id="modaleImportStato" style="padding:8px 20px;font-size:13px;color:#64748b;text-align:right"></div>
+  </div>
+</div>
+
+  <script src="/static/import_universale.js"></script>
+  <script src="/static/ux_home_patch.js"></script>
+  <script src="/static/vista_modalita.js?v=pdf2"></script>
+</body>
+</html>
