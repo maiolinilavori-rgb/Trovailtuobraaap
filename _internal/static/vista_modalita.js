@@ -306,7 +306,7 @@ window.toggleMenuMobile=function(forzaChiudi){
   var b=document.getElementById('btnHamburgerMobile');
   if(!m||!b)return;
   var apri=forzaChiudi===false?false:!m.classList.contains('aperto-mobile');
-  m.classList.toggle('aperto-mobile',apri);
+  m.classList.toggle('aperto-mobile',apri);var bd=document.getElementById('mobileDrawerBackdrop');if(bd)bd.classList.toggle('attivo',apri);
   b.innerHTML=apri?'✕ Chiudi':'☰ Menu';
 };
 document.addEventListener('click',function(e){
