@@ -277,3 +277,27 @@ function applicaEtichetteProfilo(ui){
   else initProfiliNav();
   setTimeout(initProfiliNav,500);
 })();
+(function(){
+  function injectPopolaBtn(){
+    if(document.getElementById('btnPopolaProfili'))return;
+    var target=document.querySelector('#page-widget .grid, #page-strumenti .grid, #page-widget, #page-strumenti')||document.querySelector('.widget-grid');
+    if(!target)return;
+    var btn=document.createElement('button');
+    btn.id='btnPopolaProfili';
+    btn.className='btn';
+    btn.style.cssText='background:linear-gradient(135deg,#f97316,#ea580c);color:#fff;font-weight:800;border:none;border-radius:10px;padding:12px 18px;cursor:pointer;box-shadow:0 4px 12px rgba(234,88,12,.35);margin:8px 0;display:inline-flex;align-items:center;gap:8px;font-size:14px';
+    btn.innerHTML='✨ POPOLA PROFILI';
+    btn.title='Aggiunge subito nuovi dati coerenti alla categoria del profilo attivo';
+    btn.onclick=function(){
+      btn.disabled=true;btn.innerHTML='⏳ Popolamento in corso...';
+      fetch('/api/profili/popola',{method:'POST'}).then(function(r){return r.json();}).then(function(d){
+        if(d.success){location.reload();}
+        else{alert(d.error||'Errore popolamento');btn.disabled=false;btn.innerHTML='✨ POPOLA PROFILI';}
+      });
+    };
+    target.insertBefore(btn,target.firstChild);
+  }
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',injectPopolaBtn);
+  else injectPopolaBtn();
+  setTimeout(injectPopolaBtn,700);
+})();

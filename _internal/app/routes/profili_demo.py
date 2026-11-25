@@ -294,3 +294,45 @@ def api_attiva_profilo():
                 shutil.copy2(f, dst_g / f.name)
     storage.salva_dati(d, crea_backup=False)
     return jsonify({'success': True, 'profilo': pid, 'ui': PROFILI[pid]['ui']})
+
+@bp.route('/popola', methods=['POST'])
+@login_required
+def api_popola_profilo():
+    import random
+    d = storage.get_dati()
+    pid = d.get('profilo_demo_attivo', 'motoclub')
+    if pid not in PROFILI:
+        pid = 'motoclub'
+    base = PROFILI[pid]['dati']
+    n = len(d.get('eventi', [])) + 1
+    ev = copy.deepcopy(random.choice(base['eventi']))
+    ev['id'] = 1000 + n
+    ev['data'] = f"2026-{random.randint(1,12):02d}-{random.randint(1,28):02d}"
+    ev['iniziativa'] = f"{ev['iniziativa']} (Extra #{n})"
+    ev['numero_partecipanti'] = ev.get('numero_partecipanti', 40) + random.randint(10, 45)
+    d.setdefault('eventi', []).append(ev)
+    cont = copy.deepcopy(random.choice(base['rubrica']))
+    cont['id'] = 1000 + len(d.get('rubrica', [])) + 1
+    cont['nome'] = f"{cont['nome']} #{cont['id'] - 1000}"
+    cont['telefono'] = f"339 70{random.randint(10000,99999)}"
+    d.setdefault('rubrica', []).append(cont)
+    cat_scelta = random.choice(['generale', 'braccialetti', 'medaglie', 'adesivi', 'coppe', 'gadgets'])
+    tk = copy.deepcopy(random.choice(base['task']))
+    tk['id'] = 1000 + len(d.get('task', [])) + 1
+    tk['categoria'] = cat_scelta
+    tk['titolo'] = f"[{cat_scelta.upper()}] {tk['titolo']} #{tk['id'] - 1000}"
+    tk['scadenza'] = f"2026-11-{random.randint(26,30):02d}"
+    tk['priorita'] = random.choice(['alta', 'media'])
+    tk['stato'] = 'da_fare'
+    d.setdefault('task', []).append(tk)
+    mat = copy.deepcopy(random.choice(base['entita']))
+    mat['id'] = 1000 + len(d.get('entita', [])) + 1
+    mat['nome'] = f"{mat['nome']} (Lotto #{mat['id'] - 1000})"
+    mat['quantita'] = mat.get('quantita', 10) + random.randint(5, 25)
+    d.setdefault('entita', []).append(mat)
+    imp = random.choice([450.0, 780.0, 1150.0, 1600.0])
+    d.setdefault('entrate', []).append({'id': 1000 + len(d.get('entrate', [])) + 1, 'data': ev['data'], 'tipo': 'evento', 'descrizione': f"Incasso {ev['iniziativa']}", 'importo': imp})
+    for k in ('braccialetti', 'medaglie', 'adesivi', 'coppe'):
+        d.setdefault('stock', {})[k] = d.get('stock', {}).get(k, 0) + random.randint(10, 40)
+    storage.salva_dati(d, crea_backup=False)
+    return jsonify({'success': True, 'profilo': pid, 'tot_eventi': len(d['eventi']), 'tot_task': len(d['task']), 'tot_rubrica': len(d['rubrica'])})
