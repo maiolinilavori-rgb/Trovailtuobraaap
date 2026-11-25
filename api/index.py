@@ -56,7 +56,7 @@ if not data_file.exists():
     data_file.write_text(json.dumps(demo_dati, ensure_ascii=False, indent=2), encoding="utf-8")
 
 from app import create_app, storage
-storage.ricarica_dati()
+storage.get_dati()
 app = create_app()
 
 _flask_app = app
