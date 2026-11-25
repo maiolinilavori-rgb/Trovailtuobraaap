@@ -1,3 +1,14 @@
+function applicaEtichetteProfilo(ui){
+  if(!ui)return;
+  var map=[['📅 Eventi',ui.eventi],['🏫 Scuole',ui.scuole],['📦 Eventi ALTRO',ui.altro],['📦 ALTRO',ui.altro],['📦 Bracc.',ui.bracc],['🏅 Med.',ui.med],['🔖 Ades.',ui.ades],['🏆 Coppe',ui.coppe],['📦 Materiali',ui.mat]];
+  var walk=document.createTreeWalker(document.body,NodeFilter.SHOW_TEXT,null,false),n;
+  while((n=walk.nextNode())){
+    if(!n.parentElement||/SCRIPT|STYLE|SELECT|OPTION/.test(n.parentElement.tagName))continue;
+    var t=n.nodeValue;
+    for(var i=0;i<map.length;i++){if(t.indexOf(map[i][0])!==-1)t=t.split(map[i][0]).join(map[i][1]);}
+    if(t!==n.nodeValue)n.nodeValue=t;
+  }
+}
 (function() {
   if (window._gestoreVisteCelleInit) return;
   window._gestoreVisteCelleInit = true;
@@ -251,7 +262,7 @@
     if(!sel||sel.dataset.bound)return;
     sel.dataset.bound='1';
     fetch('/api/profili/lista').then(function(r){return r.json();}).then(function(d){
-      if(!d.success)return;
+      if(!d.success)return;applicaEtichetteProfilo(d.ui);setTimeout(function(){applicaEtichetteProfilo(d.ui);},800);
       sel.innerHTML=d.profili.map(function(p){return '<option value="'+p.id+'"'+(p.id===d.attivo?' selected':'')+'>'+p.label+'</option>';}).join('');
     });
     sel.onchange=function(){
