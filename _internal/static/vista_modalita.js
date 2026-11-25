@@ -315,3 +315,19 @@ document.addEventListener('click',function(e){
   if(e.target.closest('#menuPrincipaleApp a'))window.toggleMenuMobile(false);
   else if(!e.target.closest('.nav'))window.toggleMenuMobile(false);
 });
+(function(){
+  var braaapSuonato = false;
+  function suonaBraaapLogin(){
+    if(braaapSuonato) return;
+    var app = document.getElementById('appContainer');
+    if(app && app.style.display !== 'none'){
+      braaapSuonato = true;
+      try { var a = new Audio('/static/braaap_marmitta.aac'); a.volume = 0.85; a.play().catch(function(){}); } catch(e){}
+    }
+  }
+  var obs = new MutationObserver(suonaBraaapLogin);
+  window.addEventListener('DOMContentLoaded', function(){
+    var app = document.getElementById('appContainer');
+    if(app) obs.observe(app, { attributes: true, attributeFilter: ['style'] });
+  });
+})();
