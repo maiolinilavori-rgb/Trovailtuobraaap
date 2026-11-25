@@ -251,9 +251,9 @@
     nav.style.flexWrap='nowrap';
     var box=document.createElement('div');
     box.id='boxProfiliDemo';
-    box.style.cssText='margin-left:auto;display:inline-flex;align-items:center;gap:6px;flex-shrink:0;white-space:nowrap;padding-left:8px';
-    box.innerHTML='<span style="font-size:12px;font-weight:800;color:#f97316">🎭 PROFILI</span><select id="selProfiloDemo" title="Cambia profilo attività demo" style="background:#0f172a;color:#fff;border:1px solid #f97316;border-radius:8px;padding:5px 8px;font-size:12px;font-weight:700;cursor:pointer;max-width:215px"></select>';
-    nav.appendChild(box);
+    box.style.cssText='margin:0 auto;display:inline-flex;align-items:center;gap:6px;flex-shrink:0;white-space:nowrap';
+    box.innerHTML='<span style="font-size:12px;font-weight:800;color:#f97316">🎭 SCEGLI PROFILO</span><select id="selProfiloDemo" title="Cambia profilo attività demo" style="background:#0f172a;color:#fff;border:1px solid #f97316;border-radius:8px;padding:5px 8px;font-size:12px;font-weight:700;cursor:pointer;max-width:215px"></select>';
+    var annoEl=Array.from(nav.querySelectorAll('select,button,div,span')).find(function(e){return /tutti gli anni/i.test(e.textContent||'');});if(annoEl&&annoEl.parentNode){annoEl.parentNode.insertBefore(box,annoEl.nextSibling);}else{nav.appendChild(box);}
     var sel=document.getElementById('selProfiloDemo');
     fetch('/api/profili/lista').then(function(r){return r.json();}).then(function(d){
       if(!d.success)return;
