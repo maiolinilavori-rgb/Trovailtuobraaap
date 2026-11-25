@@ -56,3 +56,14 @@ if not data_file.exists():
 
 from app import create_app
 app = create_app()
+
+_flask_app = app
+def app(environ, start_response):
+    qs = environ.get("QUERY_STRING", "")
+    if "__path=" in qs:
+        from urllib.parse import parse_qs, urlencode
+        q = parse_qs(qs, keep_blank_values=True)
+        p = q.pop("__path", [""])[0]
+        environ["PATH_INFO"] = "/" + p.lstrip("/")
+        environ["QUERY_STRING"] = urlencode(q, doseq=True)
+    return _flask_app(environ, start_response)
