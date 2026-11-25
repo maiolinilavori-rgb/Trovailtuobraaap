@@ -45,10 +45,13 @@ PROFILI = {
             'entrate': [{'id': 1, 'data': '2026-04-18', 'tipo': 'evento', 'descrizione': 'Contributo Scuola Nord', 'importo': 1200.0}, {'id': 2, 'data': '2026-05-24', 'tipo': 'evento', 'descrizione': 'Open Day Pista', 'importo': 2150.0}],
             'uscite': [{'id': 1, 'data': '2026-03-10', 'descrizione': 'Tagliando furgone trasporto moto', 'importo': 290.0}],
             'postit': [{'id': 1, 'testo': 'Controllare pressione gomme minimoto prima del carico', 'colore': '#fef08a'}],
-            'task': [
-                {'id': 1, 'titolo': 'Verificare carica batterie minimoto elettriche', 'categoria': 'Mezzi', 'data_scadenza': '2026-06-10', 'priorita': 'Alta', 'stato': 'Da fare'},
-                {'id': 2, 'titolo': 'Inviare elenco telai per assicurazione FMI', 'categoria': 'Segreteria', 'data_scadenza': '2026-06-12', 'priorita': 'Alta', 'stato': 'In corso'},
-                {'id': 3, 'titolo': 'Sopralluogo area erbosa e fettucciato sicurezza', 'categoria': 'Sicurezza', 'data_scadenza': '2026-06-16', 'priorita': 'Alta', 'stato': 'Da fare'}
+                        'task': [
+                {'id': 1, 'titolo': 'Verificare carica batterie minimoto elettriche #1 e #2', 'categoria': 'generale', 'scadenza': '2026-12-05', 'priorita': 'alta', 'stato': 'in_lavorazione', 'note': 'Controllo voltaggio e connettori prima della tappa', 'referente': 'Marco Rossi'},
+                {'id': 2, 'titolo': 'Preparare 120 braccialetti numerati per tappa scolastica', 'categoria': 'braccialetti', 'scadenza': '2026-12-08', 'priorita': 'alta', 'stato': 'da_fare', 'note': 'Dividere in buste da 30 per classe', 'referente': 'Prof.ssa Giulia Bianchi'},
+                {'id': 3, 'titolo': 'Confezionare 90 medaglie finisher con nastrino tricolore', 'categoria': 'medaglie', 'scadenza': '2026-12-10', 'priorita': 'media', 'stato': 'da_fare', 'note': 'Verificare scorta nastrini in magazzino', 'referente': 'Marco Rossi'},
+                {'id': 4, 'titolo': 'Stampare 150 adesivi casco Trova il tuo Braaap', 'categoria': 'adesivi', 'scadenza': '2026-12-12', 'priorita': 'media', 'stato': 'in_lavorazione', 'note': 'Finitura lucida resistente acqua', 'referente': 'Dott. Andrea Riva'},
+                {'id': 5, 'titolo': 'Lucidare e targhettare 6 coppe podi categorie giovanili', 'categoria': 'coppe', 'scadenza': '2026-12-15', 'priorita': 'bassa', 'stato': 'da_fare', 'note': 'Incisione data evento sul basamento', 'referente': 'Marco Rossi'},
+                {'id': 6, 'titolo': 'Assembleare kit gadgets benvenuto e portachiavi pista', 'categoria': 'gadgets', 'scadenza': '2026-12-18', 'priorita': 'media', 'stato': 'completato', 'note': 'Pronti in scatola #3 furgone', 'referente': 'Prof.ssa Giulia Bianchi'}
             ]
         }
     },
@@ -89,10 +92,13 @@ PROFILI = {
             'entrate': [{'id': 1, 'data': '2026-05-14', 'tipo': 'evento', 'descrizione': 'Fattura Studio Bresciani', 'importo': 2800.0}, {'id': 2, 'data': '2026-05-28', 'tipo': 'evento', 'descrizione': 'Saldo EdilValcamonica Srl', 'importo': 4600.0}],
             'uscite': [{'id': 1, 'data': '2026-04-05', 'descrizione': 'Fornitura toner, risme A3 e minuteria ferramenta', 'importo': 485.0}],
             'postit': [{'id': 1, 'testo': 'Richiamare Arch. Bresciani per conferma firma preventivo', 'colore': '#bfdbfe'}],
-            'task': [
-                {'id': 1, 'titolo': 'Inviare preventivo aggiornato e brochure al cliente Bresciani', 'categoria': 'Commerciale', 'data_scadenza': '2026-06-08', 'priorita': 'Alta', 'stato': 'In corso'},
-                {'id': 2, 'titolo': 'Riordinare toner, risme A4/A3 e tasselli in ferramenta', 'categoria': 'Magazzino', 'data_scadenza': '2026-06-11', 'priorita': 'Media', 'stato': 'Da fare'},
-                {'id': 3, 'titolo': 'Confermare appuntamento sopralluogo con il Team operativo', 'categoria': 'Appuntamenti', 'data_scadenza': '2026-06-14', 'priorita': 'Alta', 'stato': 'Da fare'}
+                        'task': [
+                {'id': 1, 'titolo': 'Inviare preventivo aggiornato ristrutturazione a Studio Bresciani', 'categoria': 'braccialetti', 'scadenza': '2026-12-04', 'priorita': 'alta', 'stato': 'in_lavorazione', 'note': 'Allegare capitolato e brochure pdf', 'referente': 'Arch. Lorenzo Bresciani'},
+                {'id': 2, 'titolo': 'Confermare appuntamento sopralluogo capannone con il Team', 'categoria': 'coppe', 'scadenza': '2026-12-07', 'priorita': 'alta', 'stato': 'da_fare', 'note': 'Portare telemetro laser e campionario', 'referente': 'Geom. Paolo Ferrari'},
+                {'id': 3, 'titolo': 'Riordinare toner plotter A0, risme A3 e tasselli in ferramenta', 'categoria': 'generale', 'scadenza': '2026-12-09', 'priorita': 'media', 'stato': 'da_fare', 'note': 'Verificare scorta minima cancelleria ed edicola', 'referente': 'Sara Conti'},
+                {'id': 4, 'titolo': 'Ritirare stampe tavole tecniche e cartelline intestate', 'categoria': 'adesivi', 'scadenza': '2026-12-11', 'priorita': 'media', 'stato': 'in_lavorazione', 'note': 'Tipografia centrale ore 16:00', 'referente': 'Sara Conti'},
+                {'id': 5, 'titolo': 'Preparare kit gadget promozionali e agende clienti VIP', 'categoria': 'medaglie', 'scadenza': '2026-12-14', 'priorita': 'bassa', 'stato': 'da_fare', 'note': 'Consegnare durante gli appuntamenti di dicembre', 'referente': 'Arch. Lorenzo Bresciani'},
+                {'id': 6, 'titolo': 'Omaggi tecnici e chiavette USB brandizzate per nuovi clienti', 'categoria': 'gadgets', 'scadenza': '2026-12-19', 'priorita': 'media', 'stato': 'completato', 'note': 'Caricate brochure aziendali sulle chiavette', 'referente': 'Geom. Paolo Ferrari'}
             ]
         }
     },
@@ -111,10 +117,13 @@ PROFILI = {
             'entrate': [{'id': 1, 'data': '2026-07-18', 'tipo': 'evento', 'descrizione': 'Incasso Notte Bianca', 'importo': 7400.0}],
             'uscite': [{'id': 1, 'data': '2026-04-02', 'descrizione': 'Polizza RC Terzi manifestazioni + SIAE', 'importo': 980.0}],
             'postit': [{'id': 1, 'testo': 'Inviare planimetria vie di fuga alla Polizia Locale', 'colore': '#fde68a'}],
-            'task': [
-                {'id': 1, 'titolo': 'Depositare SCIA evento e Piano Emergenza in Comune', 'categoria': 'Permessi', 'data_scadenza': '2026-06-25', 'priorita': 'Alta', 'stato': 'In corso'},
-                {'id': 2, 'titolo': 'Aprire permesso musicale SIAE online', 'categoria': 'Amministrazione', 'data_scadenza': '2026-07-01', 'priorita': 'Alta', 'stato': 'Da fare'},
-                {'id': 3, 'titolo': 'Confermare turni volontari cassa, griglia e bar', 'categoria': 'Staff', 'data_scadenza': '2026-07-10', 'priorita': 'Media', 'stato': 'Da fare'}
+                        'task': [
+                {'id': 1, 'titolo': 'Depositare SCIA evento e Piano Emergenza in Comune', 'categoria': 'generale', 'scadenza': '2026-12-06', 'priorita': 'alta', 'stato': 'in_lavorazione', 'note': 'Protocollo SUAP + planimetria vie di fuga', 'referente': 'Comm. Roberto Cattaneo'},
+                {'id': 2, 'titolo': 'Preparare 600 pass ingresso e braccialetti area spettacoli', 'categoria': 'braccialetti', 'scadenza': '2026-12-09', 'priorita': 'alta', 'stato': 'da_fare', 'note': 'Numerazione progressiva per botteghino', 'referente': 'Elena Ferri'},
+                {'id': 3, 'titolo': 'Ritirare premi lotteria e riconoscimenti espositori', 'categoria': 'medaglie', 'scadenza': '2026-12-12', 'priorita': 'media', 'stato': 'da_fare', 'note': 'Controllare cesti e buoni sponsor locali', 'referente': 'Elena Ferri'},
+                {'id': 4, 'titolo': 'Affissione locandine e distribuzione flyer nei negozi', 'categoria': 'adesivi', 'scadenza': '2026-12-14', 'priorita': 'media', 'stato': 'in_lavorazione', 'note': 'Coprire anche i comuni limitrofi', 'referente': 'Elena Ferri'},
+                {'id': 5, 'titolo': 'Incidere targhe ringraziamento e trofei gara gastronomica', 'categoria': 'coppe', 'scadenza': '2026-12-16', 'priorita': 'bassa', 'stato': 'da_fare', 'note': 'Premiazione sul palco centrale ore 21:30', 'referente': 'Comm. Roberto Cattaneo'},
+                {'id': 6, 'titolo': 'Preparare gadget ricordo e grembiuli staff cucina', 'categoria': 'gadgets', 'scadenza': '2026-12-20', 'priorita': 'media', 'stato': 'completato', 'note': '35 grembiuli lavati e imbustati', 'referente': 'Elena Ferri'}
             ]
         }
     }
@@ -137,10 +146,13 @@ PROFILI = {
             'liste': [{'id': 1, 'titolo': 'Checklist Apertura Camp Estivo', 'voci': [{'testo': 'Verifica kit primo soccorso e ghiaccio spray', 'fatto': True}, {'testo': 'Stampa elenchi allergie e deleghe ritiro', 'fatto': False}]}],
             'note_calendario': [{'id': 1, 'data': '2026-06-15', 'testo': 'Accoglienza famiglie ore 08:30 e consegna kit camp'}],
             'postit': [{'id': 1, 'testo': 'Controllare scadenza elettrodi DAE prima del torneo', 'colore': '#bbf7d0'}],
-            'task': [
-                {'id': 1, 'titolo': 'Controllare scadenza certificati medici atleti', 'categoria': 'Segreteria', 'data_scadenza': '2026-06-10', 'priorita': 'Alta', 'stato': 'In corso'},
-                {'id': 2, 'titolo': 'Raccogliere deleghe ritiro minori e allergie', 'categoria': 'Camp Estivo', 'data_scadenza': '2026-06-12', 'priorita': 'Alta', 'stato': 'Da fare'},
-                {'id': 3, 'titolo': 'Testare batterie ed elettrodi Defibrillatore DAE', 'categoria': 'Sicurezza', 'data_scadenza': '2026-06-14', 'priorita': 'Alta', 'stato': 'Completato'}
+                        'task': [
+                {'id': 1, 'titolo': 'Controllare scadenza certificati medici e batterie DAE', 'categoria': 'generale', 'scadenza': '2026-12-05', 'priorita': 'alta', 'stato': 'in_lavorazione', 'note': 'Verifica registro sanitario atleti CSI', 'referente': 'Luca Fontana'},
+                {'id': 2, 'titolo': 'Assegnare braccialetti colore squadra gruppi camp', 'categoria': 'braccialetti', 'scadenza': '2026-12-08', 'priorita': 'alta', 'stato': 'da_fare', 'note': 'Rosso junior, blu senior', 'referente': 'Chiara Bellini'},
+                {'id': 3, 'titolo': 'Preparare 65 medaglie partecipazione torneo multisport', 'categoria': 'medaglie', 'scadenza': '2026-12-11', 'priorita': 'media', 'stato': 'da_fare', 'note': 'Consegna a fine settimana camp', 'referente': 'Chiara Bellini'},
+                {'id': 4, 'titolo': 'Applicare adesivi nominativi su borracce e zaini ragazzi', 'categoria': 'adesivi', 'scadenza': '2026-12-13', 'priorita': 'bassa', 'stato': 'in_lavorazione', 'note': 'Etichette resistenti al lavaggio', 'referente': 'Chiara Bellini'},
+                {'id': 5, 'titolo': 'Allestire tavolo coppe Fair-Play e miglior portiere', 'categoria': 'coppe', 'scadenza': '2026-12-16', 'priorita': 'media', 'stato': 'da_fare', 'note': '4 trofei principali + targhe', 'referente': 'Luca Fontana'},
+                {'id': 6, 'titolo': 'Distribuire sacche sportive e polsini gadget iscritti', 'categoria': 'gadgets', 'scadenza': '2026-12-19', 'priorita': 'media', 'stato': 'completato', 'note': 'Kit completi in segreteria campo', 'referente': 'Luca Fontana'}
             ]
         }
     },
@@ -162,10 +174,13 @@ PROFILI = {
             'liste': [{'id': 1, 'titolo': 'Checklist Uscita Didattica', 'voci': [{'testo': 'Raccolta moduli consenso firmati dai genitori', 'fatto': True}, {'testo': 'Consegna elenco alunni a compagnia pullman', 'fatto': False}]}],
             'note_calendario': [{'id': 1, 'data': '2026-05-19', 'testo': 'Partenza pullman ore 08:45 dal piazzale del plesso'}],
             'postit': [{'id': 1, 'testo': 'Stampare attestati partecipazione per le classi 3A e 3B', 'colore': '#ddd6fe'}],
-            'task': [
-                {'id': 1, 'titolo': 'Raccogliere autorizzazioni famiglie per uscita didattica', 'categoria': 'Segreteria', 'data_scadenza': '2026-05-12', 'priorita': 'Alta', 'stato': 'In corso'},
-                {'id': 2, 'titolo': 'Inviare elenco alunni per copertura assicurativa', 'categoria': 'Amministrazione', 'data_scadenza': '2026-05-14', 'priorita': 'Alta', 'stato': 'Da fare'},
-                {'id': 3, 'titolo': 'Preparare attestati e targhe classi vincitrici', 'categoria': 'Didattica', 'data_scadenza': '2026-05-18', 'priorita': 'Media', 'stato': 'Da fare'}
+                        'task': [
+                {'id': 1, 'titolo': 'Raccogliere autorizzazioni famiglie per uscita didattica', 'categoria': 'generale', 'scadenza': '2026-12-05', 'priorita': 'alta', 'stato': 'in_lavorazione', 'note': 'Mancano 3 moduli classe 3B', 'referente': 'Ins. Marta Colombo'},
+                {'id': 2, 'titolo': 'Consegnare pass identificativi uscite ai docenti accompagnatori', 'categoria': 'braccialetti', 'scadenza': '2026-12-08', 'priorita': 'alta', 'stato': 'da_fare', 'note': 'Numeri emergenza scuola stampati sul retro', 'referente': 'Ins. Marta Colombo'},
+                {'id': 3, 'titolo': 'Stampare attestati e medaglie Olimpiadi STEM & Sport', 'categoria': 'medaglie', 'scadenza': '2026-12-12', 'priorita': 'media', 'stato': 'da_fare', 'note': '90 finalisti tra primaria e media', 'referente': 'Prof. Davide Galli'},
+                {'id': 4, 'titolo': 'Etichettare kit robotica educativa e cartelle progetti PON', 'categoria': 'adesivi', 'scadenza': '2026-12-14', 'priorita': 'bassa', 'stato': 'in_lavorazione', 'note': 'Inventario laboratorio informatica', 'referente': 'Prof. Davide Galli'},
+                {'id': 5, 'titolo': 'Preparare targhe e diplomi per le classi vincitrici', 'categoria': 'coppe', 'scadenza': '2026-12-17', 'priorita': 'media', 'stato': 'da_fare', 'note': 'Cerimonia in Aula Magna con il Dirigente', 'referente': 'Prof. Davide Galli'},
+                {'id': 6, 'titolo': 'Consegnare segnalibri ecologici e matite gadget giornata green', 'categoria': 'gadgets', 'scadenza': '2026-12-20', 'priorita': 'bassa', 'stato': 'completato', 'note': 'Distribuiti a tutte le classi del plesso', 'referente': 'Ins. Marta Colombo'}
             ]
         }
     }
