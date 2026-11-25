@@ -301,3 +301,17 @@ function applicaEtichetteProfilo(ui){
   else injectPopolaBtn();
   setTimeout(injectPopolaBtn,700);
 })();
+window.toggleMenuMobile=function(forzaChiudi){
+  var m=document.getElementById('menuPrincipaleApp');
+  var b=document.getElementById('btnHamburgerMobile');
+  if(!m||!b)return;
+  var apri=forzaChiudi===false?false:!m.classList.contains('aperto-mobile');
+  m.classList.toggle('aperto-mobile',apri);
+  b.innerHTML=apri?'✕ Chiudi':'☰ Menu';
+};
+document.addEventListener('click',function(e){
+  var m=document.getElementById('menuPrincipaleApp');
+  if(!m||!m.classList.contains('aperto-mobile'))return;
+  if(e.target.closest('#menuPrincipaleApp a'))window.toggleMenuMobile(false);
+  else if(!e.target.closest('.nav'))window.toggleMenuMobile(false);
+});

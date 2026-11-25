@@ -28,6 +28,19 @@ input[type="text"], input:not([type]), select { resize: horizontal; overflow: au
 .barra-viste button { border: none; background: transparent; padding: 5px 12px; border-radius: 7px; font-size: 12px; font-weight: 700; color: #475569; cursor: pointer; white-space: nowrap; }
 .barra-viste button.attiva { background: #0288D1; color: #fff; box-shadow: 0 1px 3px rgba(0,0,0,.18); }
 
+#btnHamburgerMobile { display: none; }
+@media (max-width: 900px) {
+  #barraNavigazione { flex-wrap: wrap !important; height: auto !important; padding: 6px 8px !important; gap: 6px !important; }
+  #boxProfiliDemo { order: 10; width: 100% !important; margin: 2px 0 0 0 !important; justify-content: space-between !important; }
+  #selProfiloDemo { width: auto !important; min-width: 0 !important; flex: 1 !important; max-width: none !important; }
+  .nav { flex-wrap: wrap !important; justify-content: space-between !important; align-items: center !important; padding: 10px 12px !important; position: relative !important; }
+  #btnHamburgerMobile { display: inline-flex !important; align-items: center; gap: 6px; background: #0f172a; color: #fff; border: 1.5px solid #f97316; border-radius: 10px; padding: 8px 14px; font-size: 14px; font-weight: 800; cursor: pointer; }
+  .nav .menu { display: none !important; width: 100% !important; flex-direction: column !important; gap: 4px !important; margin-top: 10px !important; max-height: 70vh; overflow-y: auto; background: var(--card-bg, #ffffff); border-radius: 12px; padding: 8px; box-shadow: 0 12px 30px rgba(0,0,0,.22); border: 1px solid #cbd5e1; }
+  .nav .menu.aperto-mobile { display: flex !important; }
+  .nav .menu a { width: 100% !important; text-align: left !important; padding: 10px 12px !important; border-radius: 8px !important; font-size: 14px !important; box-sizing: border-box !important; }
+  .stats, .grid { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; gap: 8px !important; }
+  table { display: block; overflow-x: auto; white-space: nowrap; }
+}
 </style>
 </head>
 <body>
@@ -117,7 +130,8 @@ input[type="text"], input:not([type]), select { resize: horizontal; overflow: au
     <span>Trova il tuo Braaap</span>
   </div>
   <input type="file" id="logoInputNascosto" accept="image/*" style="display:none" onchange="uploadLogoCliccato(this.files)">
-  <div class="menu">
+  <button type="button" id="btnHamburgerMobile" aria-label="Apri menu" onclick="toggleMenuMobile()">☰ Menu</button>
+  <div class="menu" id="menuPrincipaleApp">
     <a class="active" onclick="mostra('dashboard')">🏠 Home</a>
     <a onclick="mostra('eventi')">📅 Eventi</a>
     <a onclick="mostra('scuole')">🏫 Scuole</a>
