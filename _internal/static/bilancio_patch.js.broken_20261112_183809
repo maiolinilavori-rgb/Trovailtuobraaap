@@ -1,0 +1,104 @@
+﻿// ============================================================
+// MEMORANDIA - Patch bilancio progressivo cumulativo
+// Aggiunge riga TOTALE in fondo alla tabella
+// Ridefinisce caricaBilancioProgressivo (l'ultima vince)
+// Data: 2026-11-12
+// ============================================================
+
+// Sovrascrive la funzione esistente in app.js
+window.caricaBilancioProgressivo = async function(da, a) {
+  var cont = document.getElementById('bilancioContenuto');
+  if (!cont) return;
+  cont.innerHTML = '<div style="text-align:center;padding:40px;color:#90A4AE">⏳ Calcolo totale e progressione...</div>';
+
+  try {
+    var qs = [];
+    if (da) qs.push('da=' + encodeURIComponent(da));
+    if (a) qs.push('a=' + encodeURIComponent(a));
+    var url = '/api/bilancio/progressivo' + (qs.length ? '?' + qs.join('&') : '');
+
+    var r = await fetch(url);
+    var data = await r.json();
+    if (!data.success) {
+      cont.innerHTML = '<div style="color:#DC2626">Errore: ' + (data.error || '?') + '</div>';
+      return;
+    }
+    var b = data.dati;
+    var lbl = (b.anno_da && b.anno_a)
+      ? (String(b.anno_da) === String(b.anno_a) ? String(b.anno_da) : b.anno_da + ' - ' + b.anno_a)
+      : 'Tutti gli anni';
+
+    // --- Barra filtro ---
+    var html = _renderBarraFiltroBilancio(b.anni_disponibili, b.anno_da, b.anno_a);
+
+    // --- 3 box riepilogo ---
+    html += '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:20px">';
+    html += '<div class="storico-stat" style="border-left-color:#16A34A"><div class="num" style="color:#16A34A">€ ' + _fmtNum(b.entrate.totale.toFixed(2)) + '</div><div class="label">💰 Entrate Totali (' + lbl + ')</div></div>';
+    html += '<div class="storico-stat" style="border-left-color:#DC2626"><div class="num" style="color:#DC2626">€ ' + _fmtNum(b.uscite.totale.toFixed(2)) + '</div><div class="label">💸 Uscite Totali (' + lbl + ')</div></div>';
+    html += '<div class="storico-stat" style="border-left-color:' + (b.ok ? '#16A34A' : '#DC2626') + '"><div class="num" style="color:' + (b.ok ? '#16A34A' : '#DC2626') + '">' + (b.margine >= 0 ? '+' : '') + '€ ' + _fmtNum(b.margine.toFixed(2)) + '</div><div class="label">' + (b.ok ? '✅' : '⚠️') + ' Margine Complessivo</div></div>';
+    html += '</div>';
+
+    // --- Tabella con riga TOTALE ---
+    html += '<div class="storico-chart" style="overflow-x:auto">';
+    html += '<h3 style="color:#0288D1;margin-bottom:10px">📈 Andamento Annuale e Progressivo Cumulativo</h3>';
+
+    if (!b.righe || b.righe.length === 0) {
+      html += '<div style="color:#90A4AE;padding:12px">Nessun dato nel periodo.</div>';
+    } else {
+      html += '<table style="width:100%;border-collapse:collapse;font-size:13px"><thead><tr style="background:#f1f5f9;text-align:right">';
+      html += '<th style="padding:8px;text-align:left">Anno</th>';
+      html += '<th style="padding:8px;color:#16A34A">Entrate</th>';
+      html += '<th style="padding:8px;color:#DC2626">Uscite</th>';
+      html += '<th style="padding:8px">Margine</th>';
+      html += '<th style="padding:8px;background:#ecfdf5;color:#15803d">Entrate Cum.</th>';
+      html += '<th style="padding:8px;background:#fef2f2;color:#b91c1c">Uscite Cum.</th>';
+      html += '<th style="padding:8px;background:#eff6ff;color:#1d4ed8">Saldo Cum.</th>';
+      html += '</tr></thead><tbody>';
+
+      b.righe.forEach(function(rg) {
+        var cM = rg.margine >= 0 ? '#16A34A' : '#DC2626';
+        var cC = rg.cum_margine >= 0 ? '#15803d' : '#b91c1c';
+        html += '<tr style="border-bottom:1px solid #e2e8f0;text-align:right">';
+        html += '<td style="padding:8px;text-align:left;font-weight:700"><a href="#" onclick="caricaBilancioAnno(' + rg.anno + ');return false;" style="color:#0288D1;text-decoration:none">' + rg.anno + ' ↗</a></td>';
+        html += '<td style="padding:8px;color:#16A34A">€ ' + _fmtNum(rg.entrate.toFixed(2)) + '</td>';
+        html += '<td style="padding:8px;color:#DC2626">€ ' + _fmtNum(rg.uscite.toFixed(2)) + '</td>';
+        html += '<td style="padding:8px;font-weight:700;color:' + cM + '">' + (rg.margine >= 0 ? '+' : '') + '€ ' + _fmtNum(rg.margine.toFixed(2)) + '</td>';
+        html += '<td style="padding:8px;background:#f0fdf4;font-weight:600;color:#15803d">€ ' + _fmtNum(rg.cum_entrate.toFixed(2)) + '</td>';
+        html += '<td style="padding:8px;background:#fef2f2;font-weight:600;color:#b91c1c">€ ' + _fmtNum(rg.cum_uscite.toFixed(2)) + '</td>';
+        html += '<td style="padding:8px;background:#eff6ff;font-weight:800;color:' + cC + '">' + (rg.cum_margine >= 0 ? '+' : '') + '€ ' + _fmtNum(rg.cum_margine.toFixed(2)) + '</td>';
+        html += '</tr>';
+      });
+
+      // === RIGA TOTALE (quella che mancava!) ===
+      var tEnt = b.entrate.totale || 0;
+      var tUsc = b.uscite.totale || 0;
+      var tMar = b.margine || 0;
+      html += '<tr style="background:#1e293b;color:#f1f5f9;font-weight:800;border-top:3px solid #0f172a;text-align:right">';
+      html += '<td style="padding:10px;text-align:left;font-size:14px">📊 TOTALE (' + lbl + ')</td>';
+      html += '<td style="padding:10px;color:#86efac">€ ' + _fmtNum(tEnt.toFixed(2)) + '</td>';
+      html += '<td style="padding:10px;color:#fca5a5">€ ' + _fmtNum(tUsc.toFixed(2)) + '</td>';
+      html += '<td style="padding:10px;color:' + (tMar >= 0 ? '#86efac' : '#fca5a5') + '">' + (tMar >= 0 ? '+' : '') + '€ ' + _fmtNum(tMar.toFixed(2)) + '</td>';
+      html += '<td style="padding:10px;background:#1e3a8a;color:#bfdbfe">€ ' + _fmtNum(tEnt.toFixed(2)) + '</td>';
+      html += '<td style="padding:10px;background:#7f1d1d;color:#fecaca">€ ' + _fmtNum(tUsc.toFixed(2)) + '</td>';
+      html += '<td style="padding:10px;background:' + (tMar >= 0 ? '#14532d' : '#7f1d1d') + ';color:' + (tMar >= 0 ? '#bbf7d0' : '#fecaca') + '">' + (tMar >= 0 ? '+' : '') + '€ ' + _fmtNum(tMar.toFixed(2)) + '</td>';
+      html += '</tr>';
+
+      html += '</tbody></table>';
+    }
+
+    // --- Ripartizione uscite ---
+    html += '</div><div class="storico-chart"><h3 style="color:#475569;margin-bottom:10px">🧾 Ripartizione Uscite Totali (' + lbl + ')</h3><div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px">';
+    html += '<div style="padding:10px;background:#ecfeff;border-radius:8px"><strong>📦 Magazzino:</strong> € ' + _fmtNum(b.uscite.magazzino.totale.toFixed(2)) + '</div>';
+    html += '<div style="padding:10px;background:#f5f3ff;border-radius:8px"><strong>🧰 Inventario:</strong> € ' + _fmtNum(b.uscite.inventario.totale.toFixed(2)) + '</div>';
+    html += '<div style="padding:10px;background:#fffbeb;border-radius:8px"><strong>🎁 Materiali:</strong> € ' + _fmtNum(b.uscite.materiali.totale.toFixed(2)) + '</div>';
+    html += '<div style="padding:10px;background:#f8fafc;border-radius:8px"><strong>💸 Altro:</strong> € ' + _fmtNum(b.uscite.altro.totale.toFixed(2)) + '</div>';
+    html += '</div></div>';
+
+    cont.innerHTML = html;
+
+  } catch (e) {
+    cont.innerHTML = '<div style="color:#DC2626">Errore di rete: ' + e.message + '</div>';
+  }
+};
+
+console.log('[MEMORANDIA] Patch bilancio progressivo caricata ✅');
