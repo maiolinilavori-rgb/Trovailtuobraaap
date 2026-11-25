@@ -13,6 +13,7 @@ demo_dir = Path("/tmp/braaap_demo")
 demo_dir.mkdir(parents=True, exist_ok=True)
 os.environ.setdefault("BRAAAP_DATA_DIR", str(demo_dir))
 os.environ.setdefault("BRAAAP_DEMO_MODE", "1")
+os.environ.setdefault("SECRET_KEY", "braaap-demo-vercel-secret-key-2026-fissa")
 
 data_file = demo_dir / "braaap_data.json"
 if not data_file.exists():
@@ -50,11 +51,12 @@ if not data_file.exists():
         "task": [
             {"id": 1, "titolo": "Preparare kit gadget per tappa estiva", "categoria": "Magazzino", "data_scadenza": "2026-06-15", "priorita": "Alta", "stato": "Da fare"}
         ],
-        "rubrica": [], "postit": [], "note_calendario": [], "liste": [], "note_vocali": [], "portafoglio": []
+        "wizard_completato": True, "config": {"nome_associazione": "Trova il tuo Braaap Demo"}, "rubrica": [], "postit": [], "note_calendario": [], "liste": [], "note_vocali": [], "portafoglio": []
     }
     data_file.write_text(json.dumps(demo_dati, ensure_ascii=False, indent=2), encoding="utf-8")
 
-from app import create_app
+from app import create_app, storage
+storage.ricarica_dati()
 app = create_app()
 
 _flask_app = app
