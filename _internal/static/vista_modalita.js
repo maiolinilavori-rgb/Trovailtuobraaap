@@ -182,3 +182,64 @@
     else addSmartBtn();
     setTimeout(addSmartBtn,400);
   })();
+
+  window.avviaAutoanalisi=function(){
+    var m=document.getElementById('modalCheckSystem');
+    if(!m){
+      m=document.createElement('div');
+      m.id='modalCheckSystem';
+      m.style.cssText='position:fixed;inset:0;background:rgba(15,23,42,.68);z-index:99999;display:flex;align-items:center;justify-content:center;padding:16px';
+      m.innerHTML='<div style="background:#fff;color:#0f172a;max-width:680px;width:100%;border-radius:14px;padding:22px;box-shadow:0 20px 45px rgba(0,0,0,.35);max-height:88vh;overflow:auto"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px"><h3 style="margin:0;font-size:18px">🛠️ Autoanalisi & Autoriparazione Sistema</h3><button type="button" onclick="document.getElementById(\'modalCheckSystem\').style.display=\'none\'" style="border:none;background:#e2e8f0;border-radius:8px;padding:6px 10px;cursor:pointer;font-weight:700">✕</button></div><div id="checkSystemBody" style="font-size:13px;line-height:1.55">Analisi in corso...</div></div>';
+      document.body.appendChild(m);
+    }
+    m.style.display='flex';
+    var body=document.getElementById('checkSystemBody');
+    body.innerHTML='⏳ Controllo sintassi Python, integrità database, stock magazzino e analisi log con IA in corso...';
+    fetch('/api/check-system/esegui',{method:'POST'}).then(function(r){return r.json();}).then(function(d){
+      if(!d.success){body.innerHTML='❌ Errore durante il check.';return;}
+      var badge=d.stato_ok?'<span style="background:#DCFCE7;color:#166534;padding:4px 10px;border-radius:999px;font-weight:800">✅ SISTEMA SANO</span>':'<span style="background:#FEE2E2;color:#991B1B;padding:4px 10px;border-radius:999px;font-weight:800">⚠️ ANOMALIA RILEVATA</span>';
+      var ripHtml=(d.riparazioni_dati||[]).map(function(x){return '<li>'+x+'</li>';}).join('')||'<li>Nessuna anomalia dati rilevata</li>';
+      var errHtml=(d.errori_sintassi||[]).length?'<div style="background:#FEF2E2;border:1px solid #FCA5A5;padding:10px;border-radius:8px;margin-top:10px;color:#991B1B"><b>Errori sintassi:</b><br>'+d.errori_sintassi.join('<br>')+'</div>':'';
+      body.innerHTML='<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">'+badge+'<span style="font-size:11px;color:#64748b">'+d.timestamp+'</span></div>'
+        +'<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:12px">'
+        +'<div style="background:#F8FAFC;padding:10px;border-radius:8px;border:1px solid #E2E8F0"><div style="font-size:11px;color:#64748b">File Python</div><b>'+d.file_python_controllati+' OK</b></div>'
+        +'<div style="background:#F8FAFC;padding:10px;border-radius:8px;border:1px solid #E2E8F0"><div style="font-size:11px;color:#64748b">Spazio Disco</div><b>'+d.spazio_libero_gb+' GB</b></div>'
+        +'<div style="background:#F8FAFC;padding:10px;border-radius:8px;border:1px solid #E2E8F0"><div style="font-size:11px;color:#64748b">Backup Disponibili</div><b>'+d.numero_backup+'</b></div>'
+        +'</div>'
+        +'<div style="margin-bottom:10px"><b>🔧 Azioni & Autoriparazione Dati:</b><ul style="margin:6px 0 0 18px;padding:0">'+ripHtml+'</ul></div>'
+        +errHtml
+        +'<div style="background:#EFF6FF;border:1px solid #BFDBFE;padding:12px;border-radius:9px;margin-top:10px"><b>🧠 Diagnosi AI sui Log:</b><div style="margin-top:4px;white-space:pre-wrap">'+d.analisi_ai+'</div></div>'
+        +'<div style="display:flex;justify-content:space-between;align-items:center;margin-top:16px;padding-top:12px;border-top:1px solid #E2E8F0">'
+        +'<button type="button" onclick="ripristinaBackupEmergenza()" style="background:#F59E0B;color:#fff;border:none;padding:9px 14px;border-radius:8px;font-weight:700;cursor:pointer">⏪ Ripristina Ultimo Backup Sano</button>'
+        +'<button type="button" onclick="location.reload()" style="background:#0F172A;color:#fff;border:none;padding:9px 16px;border-radius:8px;font-weight:700;cursor:pointer">🔄 Ricarica Interfaccia</button>'
+        +'</div>';
+    }).catch(function(e){body.innerHTML='❌ Errore connessione server: '+e;});
+  };
+  window.ripristinaBackupEmergenza=function(){
+    if(!confirm('Vuoi ripristinare l\'ultimo backup sano del database?'))return;
+    fetch('/api/check-system/ripristina-ultimo',{method:'POST'}).then(function(r){return r.json();}).then(function(d){
+      alert(d.messaggio||d.error||'Operazione completata');
+      if(d.success)location.reload();
+    });
+  };
+  (function(){
+    function addCheckBtn(){
+      var targets=['page-comandi','page-esporta'];
+      targets.forEach(function(pid){
+        var pg=document.getElementById(pid);
+        if(!pg||pg.querySelector('.btn-check-system'))return;
+        var b=document.createElement('button');
+        b.type='button';
+        b.className='btn-check-system';
+        b.innerHTML='🛠️ Autoanalisi & Autoriparazione';
+        b.style.cssText='background:linear-gradient(135deg,#0F172A,#1E293B);color:#fff;border:1px solid #334155;padding:11px 16px;border-radius:10px;font-weight:700;font-size:13px;cursor:pointer;margin:0 0 16px 0;display:inline-flex;align-items:center;gap:8px;box-shadow:0 4px 12px rgba(15,23,42,.22)';
+        b.onclick=window.avviaAutoanalisi;
+        var smart=document.getElementById('btnSmartExport');
+        if(pid==='page-esporta'&&smart&&smart.nextSibling)pg.insertBefore(b,smart.nextSibling);
+        else pg.insertBefore(b,pg.firstChild);
+      });
+    }
+    if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',addCheckBtn);
+    else addCheckBtn();
+    setTimeout(addCheckBtn,500);
+  })();
