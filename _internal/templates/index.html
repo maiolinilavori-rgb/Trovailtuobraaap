@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html>
 <head>
 <meta charset="UTF-8">
@@ -46,6 +46,14 @@ input[type="text"], input:not([type]), select { resize: horizontal; overflow: au
     <select id="selettoreAnno" class="selettore-anno" onchange="cambiaAnno(this.value)" title="Filtra per anno">
       <option value="tutti">&#128197; Tutti</option>
     </select>
+  </div>
+  <div id="boxProfiliDemo" style="display:inline-flex;align-items:center;gap:6px;margin:0 8px;flex-shrink:0">
+    <span style="font-size:12px;font-weight:800;color:#f97316;white-space:nowrap">🎭 SCEGLI PROFILO</span>
+    <select id="selProfiloDemo" title="Cambia profilo attività demo" style="background:#0f172a;color:#fff;border:1px solid #f97316;border-radius:8px;padding:4px 8px;font-size:12px;font-weight:700;cursor:pointer;max-width:220px"></select>
+  </div>
+  <div id="boxProfiliDemo" style="display:inline-flex;align-items:center;gap:6px;margin:0 8px;flex-shrink:0">
+    <span style="font-size:12px;font-weight:800;color:#f97316;white-space:nowrap">🎭 SCEGLI PROFILO</span>
+    <select id="selProfiloDemo" title="Cambia profilo attività demo" style="background:#0f172a;color:#fff;border:1px solid #f97316;border-radius:8px;padding:4px 8px;font-size:12px;font-weight:700;cursor:pointer;max-width:220px"></select>
   </div>
   <button id="btnRicercaGlobale" class="nav-btn nav-btn-ricerca" onclick="apriRicercaGlobale()" title="Cerca in tutto il sito (Ctrl+K)">
     <span class="nav-icona">&#128269;</span>

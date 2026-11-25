@@ -247,7 +247,7 @@
 (function(){
   function initProfiliNav(){
     var nav=document.querySelector('nav,.nav,.navbar,.topbar,.menu-bar,[role="navigation"]')||document.querySelector('header');
-    if(!nav||document.getElementById('boxProfiliDemo'))return;
+    var sel=document.getElementById('selProfiloDemo');if(!sel)return;
     nav.style.flexWrap='nowrap';
     var box=document.createElement('div');
     box.id='boxProfiliDemo';
