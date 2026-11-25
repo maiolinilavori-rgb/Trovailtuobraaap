@@ -1,4 +1,4 @@
-"""Inizializzazione dell'applicazione Flask."""
+﻿"""Inizializzazione dell'applicazione Flask."""
 from __future__ import annotations
 import logging
 import logging.handlers
@@ -65,5 +65,10 @@ def create_app():
     from .routes import registra_tutte
     registra_tutte(app)
 
+
+    @app.route('/vetrina')
+    def vetrina():
+        from flask import render_template
+        return render_template('vetrina.html')
     logging.getLogger(__name__).info('App Flask creata')
     return app
