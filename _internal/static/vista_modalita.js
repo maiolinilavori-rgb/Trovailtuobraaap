@@ -163,25 +163,22 @@
   
 
 
+  
+
   (function(){
     function addSmartBtn(){
       if(document.getElementById('btnSmartExport'))return;
-      var target=document.querySelector('#strumenti .strumenti-grid, #strumenti .grid, #strumenti .cards, #page-strumenti .grid, #page-strumenti');
-      if(!target){
-        var h=Array.from(document.querySelectorAll('h1,h2,h3,button,a')).find(function(el){return /strumenti/i.test(el.textContent||'')&&el.closest('section,div[id]');});
-        if(h)target=h.closest('section,div[id]');
-      }
-      if(!target)return;
-      var b=document.createElement('button');
-      b.id='btnSmartExport';
-      b.type='button';
-      b.innerHTML='📊 Report Intelligente (Excel)';
-      b.title='Scarica Excel multi-foglio con KPI, Bilancio Annuale, Margini Eventi e Patrimonio';
-      b.style.cssText='background:linear-gradient(135deg,#16A34A,#15803D);color:#fff;border:none;padding:12px 18px;border-radius:10px;font-weight:700;font-size:14px;cursor:pointer;margin:8px 0;box-shadow:0 4px 12px rgba(22,163,74,.35);display:inline-flex;align-items:center;gap:8px';
-      b.onclick=window.esportaIntelligente;
-      target.appendChild(b);
+      var pg=document.getElementById('page-esporta');
+      if(!pg)return;
+      var box=document.createElement('div');
+      box.id='btnSmartExport';
+      box.style.cssText='background:linear-gradient(135deg,#16A34A,#15803D);color:#fff;padding:16px 20px;border-radius:12px;margin:0 0 18px 0;display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:12px;box-shadow:0 6px 18px rgba(22,163,74,.28)';
+      box.innerHTML='<div><div style="font-size:16px;font-weight:800">📊 Report Intelligente (Excel Multi-Foglio)</div><div style="font-size:12px;opacity:.92;margin-top:2px">Genera in 1 clic: Riepilogo Executive KPI, Bilancio Annuale, Margini per Evento e Patrimonio & Scorte</div></div><button type="button" onclick="esportaIntelligente()" style="background:#fff;color:#15803D;border:none;padding:10px 18px;border-radius:9px;font-weight:800;font-size:13px;cursor:pointer;box-shadow:0 2px 6px rgba(0,0,0,.15)">⬇️ Scarica Report Excel</button>';
+      var titolo=pg.querySelector('h1,h2,.page-title');
+      if(titolo&&titolo.nextSibling)pg.insertBefore(box,titolo.nextSibling);
+      else pg.insertBefore(box,pg.firstChild);
     }
     if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',addSmartBtn);
     else addSmartBtn();
-    setTimeout(addSmartBtn,600);
+    setTimeout(addSmartBtn,400);
   })();
