@@ -265,9 +265,9 @@ function applicaEtichetteProfilo(ui){
       if(!d.success)return;applicaEtichetteProfilo(d.ui);setTimeout(function(){applicaEtichetteProfilo(d.ui);},800);
       sel.innerHTML=d.profili.map(function(p){return '<option value="'+p.id+'"'+(p.id===d.attivo?' selected':'')+'>'+p.label+'</option>';}).join('');
     });
-    sel.onchange=function(){
+    sel.onchange=function(){var payload={profilo:sel.value};if(sel.value==='__ripristina__'){var p=prompt('Inserisci la password di accesso per ripristinare i dati reali:');if(!p){sel.value='motoclub';return;}payload.password=p;}
       sel.disabled=true;
-      fetch('/api/profili/attiva',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({profilo:sel.value})}).then(function(r){return r.json();}).then(function(d){
+      fetch('/api/profili/attiva',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)}).then(function(r){return r.json();}).then(function(d){
         if(d.success)location.reload();
         else{alert(d.error||'Errore cambio profilo');sel.disabled=false;}
       });

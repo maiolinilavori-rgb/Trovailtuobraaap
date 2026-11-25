@@ -8,3 +8,6 @@ backups/
 __pycache__/
 *.pyc
 .vercel/
+
+dati_reali_backup.json
+

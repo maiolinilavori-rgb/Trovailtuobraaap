@@ -1,5 +1,5 @@
 from __future__ import annotations
-import copy, json
+import copy, json, os
 from pathlib import Path
 from flask import Blueprint, jsonify, request
 from app import storage
@@ -140,6 +140,10 @@ def api_attiva_profilo():
     pid = (body.get('profilo') or '').strip().lower()
     d = storage.get_dati()
     if pid == '__ripristina__' and BACKUP_FILE.exists():
+        pwd = (body.get('password') or '').strip()
+        expected = os.environ.get('BRAAAP_PASSWORD') or d.get('password_accesso') or ''
+        if not expected or pwd != expected:
+            return jsonify({'success': False, 'error': 'Password errata: accesso ai dati reali negato'}), 403
         orig = json.loads(BACKUP_FILE.read_text(encoding='utf-8'))
         d.clear()
         d.update(orig)
