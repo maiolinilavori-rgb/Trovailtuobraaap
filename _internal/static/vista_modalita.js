@@ -244,17 +244,12 @@
     setTimeout(addCheckBtn,500);
   })();
 
+
 (function(){
   function initProfiliNav(){
-    var nav=document.querySelector('nav,.nav,.navbar,.topbar,.menu-bar,[role="navigation"]')||document.querySelector('header');
-    var sel=document.getElementById('selProfiloDemo');if(!sel)return;
-    nav.style.flexWrap='nowrap';
-    var box=document.createElement('div');
-    box.id='boxProfiliDemo';
-    box.style.cssText='margin:0 auto;display:inline-flex;align-items:center;gap:6px;flex-shrink:0;white-space:nowrap';
-    box.innerHTML='<span style="font-size:12px;font-weight:800;color:#f97316">🎭 SCEGLI PROFILO</span><select id="selProfiloDemo" title="Cambia profilo attività demo" style="background:#0f172a;color:#fff;border:1px solid #f97316;border-radius:8px;padding:5px 8px;font-size:12px;font-weight:700;cursor:pointer;max-width:215px"></select>';
-    var annoEl=Array.from(nav.querySelectorAll('select,button,div,span')).find(function(e){return /tutti gli anni/i.test(e.textContent||'');});if(annoEl&&annoEl.parentNode){annoEl.parentNode.insertBefore(box,annoEl.nextSibling);}else{nav.appendChild(box);}
     var sel=document.getElementById('selProfiloDemo');
+    if(!sel||sel.dataset.bound)return;
+    sel.dataset.bound='1';
     fetch('/api/profili/lista').then(function(r){return r.json();}).then(function(d){
       if(!d.success)return;
       sel.innerHTML=d.profili.map(function(p){return '<option value="'+p.id+'"'+(p.id===d.attivo?' selected':'')+'>'+p.label+'</option>';}).join('');
@@ -269,5 +264,5 @@
   }
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',initProfiliNav);
   else initProfiliNav();
-  setTimeout(initProfiliNav,600);
+  setTimeout(initProfiliNav,500);
 })();
