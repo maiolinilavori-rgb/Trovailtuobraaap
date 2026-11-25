@@ -1,5 +1,6 @@
 from __future__ import annotations
-import copy, json, os
+import copy, json, os, shutil
+from app.config import DATA_DIR
 from pathlib import Path
 from flask import Blueprint, jsonify, request
 from app import storage
@@ -22,8 +23,8 @@ PROFILI = {
                 {'id': 2, 'nome': 'Motoclub Circuito Verde', 'tipo': 'Associazione Sportiva', 'referente': 'Marco Rossi', 'telefono': '0364 000102', 'email': 'info@motodemo.it'}
             ],
             'eventi': [
-                {'id': 101, 'data': '2026-04-18', 'scuola_id': 1, 'iniziativa': 'Educazione Stradale & Mini-Cross', 'numero_partecipanti': 85, 'braccialetti': 85, 'medaglie': 85, 'adesivi': 120, 'coppe': 3, 'voci_ricavi': [{'descrizione': 'Contributo Comune', 'importo': 1200}], 'voci_costi': [{'descrizione': 'Carburante e polizza FMI', 'importo': 320}]},
-                {'id': 102, 'data': '2026-05-24', 'scuola_id': 2, 'iniziativa': 'Open Day Pista Giovanile', 'numero_partecipanti': 110, 'braccialetti': 110, 'medaglie': 60, 'adesivi': 150, 'coppe': 6, 'voci_ricavi': [{'descrizione': 'Quote iscrizione e sponsor', 'importo': 2150}], 'voci_costi': [{'descrizione': 'Ambulanza e fettucciato', 'importo': 570}]}
+                {'id': 101, 'data': '2026-04-18', 'scuola_id': 1, 'foto': [{'file': 'demo_moto_1.png', 'didascalia': 'Briefing sicurezza stradale con gli studenti', 'tag': ['scuole', 'sicurezza']}], 'iniziativa': 'Educazione Stradale & Mini-Cross', 'numero_partecipanti': 85, 'braccialetti': 85, 'medaglie': 85, 'adesivi': 120, 'coppe': 3, 'voci_ricavi': [{'descrizione': 'Contributo Comune', 'importo': 1200}], 'voci_costi': [{'descrizione': 'Carburante e polizza FMI', 'importo': 320}]},
+                {'id': 102, 'data': '2026-05-24', 'scuola_id': 2, 'foto': [{'file': 'demo_moto_2.png', 'didascalia': 'Paddock e premiazioni giovani piloti', 'tag': ['pista', 'openday']}], 'iniziativa': 'Open Day Pista Giovanile', 'numero_partecipanti': 110, 'braccialetti': 110, 'medaglie': 60, 'adesivi': 150, 'coppe': 6, 'voci_ricavi': [{'descrizione': 'Quote iscrizione e sponsor', 'importo': 2150}], 'voci_costi': [{'descrizione': 'Ambulanza e fettucciato', 'importo': 570}]}
             ],
             'altro': [{'id': 1, 'data': '2026-06-05', 'titolo': 'Esposizione Moto Storiche in Piazza', 'luogo': 'Piazza Centrale', 'note': 'Stand promozionale domenica mattina'}],
             'stock': {'braccialetti': 305, 'medaglie': 155, 'adesivi': 530, 'coppe': 21},
@@ -65,8 +66,8 @@ PROFILI = {
                 {'id': 2, 'nome': 'EdilValcamonica S.r.l.', 'tipo': 'Cliente Cantiere', 'referente': 'Geom. Paolo Ferrari', 'telefono': '0364 000202', 'email': 'cantieri@edildemo.it'}
             ],
             'eventi': [
-                {'id': 601, 'data': '2026-05-14', 'scuola_id': 1, 'iniziativa': 'Consegna Preventivo & Brochure Ristrutturazione', 'numero_partecipanti': 4, 'braccialetti': 25, 'medaglie': 5, 'adesivi': 40, 'coppe': 3, 'voci_ricavi': [{'descrizione': 'Acconto incarico e consulenza', 'importo': 2800}], 'voci_costi': [{'descrizione': 'Stampe tavole A0 e rilegatura', 'importo': 210}]},
-                {'id': 602, 'data': '2026-05-28', 'scuola_id': 2, 'iniziativa': 'Appuntamento Collaudo & Chiusura Lavori', 'numero_partecipanti': 6, 'braccialetti': 50, 'medaglie': 10, 'adesivi': 80, 'coppe': 4, 'voci_ricavi': [{'descrizione': 'Saldo fornitura e posa in opera', 'importo': 4600}], 'voci_costi': [{'descrizione': 'Minuteria ferramenta e consumabili', 'importo': 340}]}
+                {'id': 601, 'data': '2026-05-14', 'scuola_id': 1, 'foto': [{'file': 'demo_az_1.png', 'didascalia': 'Rilievo tecnico e presentazione preventivo', 'tag': ['preventivi', 'clienti']}], 'iniziativa': 'Consegna Preventivo & Brochure Ristrutturazione', 'numero_partecipanti': 4, 'braccialetti': 25, 'medaglie': 5, 'adesivi': 40, 'coppe': 3, 'voci_ricavi': [{'descrizione': 'Acconto incarico e consulenza', 'importo': 2800}], 'voci_costi': [{'descrizione': 'Stampe tavole A0 e rilegatura', 'importo': 210}]},
+                {'id': 602, 'data': '2026-05-28', 'scuola_id': 2, 'foto': [{'file': 'demo_az_2.png', 'didascalia': 'Collaudo finale e consegna commessa', 'tag': ['cantiere', 'collaudo']}], 'iniziativa': 'Appuntamento Collaudo & Chiusura Lavori', 'numero_partecipanti': 6, 'braccialetti': 50, 'medaglie': 10, 'adesivi': 80, 'coppe': 4, 'voci_ricavi': [{'descrizione': 'Saldo fornitura e posa in opera', 'importo': 4600}], 'voci_costi': [{'descrizione': 'Minuteria ferramenta e consumabili', 'importo': 340}]}
             ],
             'altro': [{'id': 1, 'data': '2026-06-09', 'titolo': 'Sopralluogo preventivo nuovo capannone zona industriale', 'luogo': 'Via Artigiani 12', 'note': 'Portare telemetro laser e campionario'}],
             'stock': {'braccialetti': 420, 'medaglie': 95, 'adesivi': 650, 'coppe': 8},
@@ -101,7 +102,7 @@ PROFILI = {
         'dati': {
             'rubrica': [{'id': 1, 'nome': 'Comm. Roberto Cattaneo', 'ruolo': 'Ufficio SUAP Comune', 'telefono': '347 0003301', 'email': 'suap@comunedemo.it', 'note': 'Permessi occupazione suolo'}, {'id': 2, 'nome': 'Elena Ferri', 'ruolo': 'Coordinatrice Stand & Volontari', 'telefono': '347 0003302', 'email': 'elena@prolocodemo.it', 'note': 'Turni cucina e cassa'}],
             'scuole': [{'id': 1, 'nome': 'Comune - Ufficio SUAP & Polizia Locale', 'tipo': 'Ente Pubblico', 'referente': 'Comm. Roberto Cattaneo', 'telefono': '0364 000301', 'email': 'suap@comunedemo.it'}],
-            'eventi': [{'id': 201, 'data': '2026-07-18', 'scuola_id': 1, 'iniziativa': 'Notte Bianca & Sagra dei Sapori', 'numero_partecipanti': 900, 'braccialetti': 600, 'medaglie': 20, 'adesivi': 500, 'coppe': 5, 'voci_ricavi': [{'descrizione': 'Stand gastronomico e patrocinio', 'importo': 7400}], 'voci_costi': [{'descrizione': 'Service concerto e forniture cucina', 'importo': 3350}]}],
+            'eventi': [{'id': 201, 'data': '2026-07-18', 'scuola_id': 1, 'foto': [{'file': 'demo_pro_1.png', 'didascalia': 'Allestimento piazza e stand gastronomico', 'tag': ['sagra', 'piazza']}], 'iniziativa': 'Notte Bianca & Sagra dei Sapori', 'numero_partecipanti': 900, 'braccialetti': 600, 'medaglie': 20, 'adesivi': 500, 'coppe': 5, 'voci_ricavi': [{'descrizione': 'Stand gastronomico e patrocinio', 'importo': 7400}], 'voci_costi': [{'descrizione': 'Service concerto e forniture cucina', 'importo': 3350}]}],
             'altro': [{'id': 1, 'data': '2026-08-10', 'titolo': 'Mercatino Artigiani Sotto le Stelle', 'luogo': 'Centro Storico', 'note': '35 bancarelle confermate'}],
             'stock': {'braccialetti': 400, 'medaglie': 80, 'adesivi': 600, 'coppe': 12},
             'movimenti': {'braccialetti': [{'id': 1, 'data': '2026-03-01', 'tipo': 'carico', 'quantita': 1000, 'prezzo_unitario': 0.30, 'motivo': 'Pass ingresso area spettacoli'}], 'medaglie': [], 'adesivi': [], 'coppe': []},
@@ -158,5 +159,12 @@ def api_attiva_profilo():
     d['profilo_demo_attivo'] = pid
     d['giacenza_iniziale_impostata'] = True
     d['import_excel_fatto'] = True
+    src_g = Path(__file__).resolve().parents[2] / 'static' / 'demo_gallery'
+    dst_g = DATA_DIR / 'uploads' / 'eventi'
+    dst_g.mkdir(parents=True, exist_ok=True)
+    if src_g.exists():
+        for f in src_g.glob('*.png'):
+            if not (dst_g / f.name).exists():
+                shutil.copy2(f, dst_g / f.name)
     storage.salva_dati(d, crea_backup=False)
     return jsonify({'success': True, 'profilo': pid, 'ui': PROFILI[pid]['ui']})
