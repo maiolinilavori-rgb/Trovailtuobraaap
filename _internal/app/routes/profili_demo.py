@@ -118,7 +118,76 @@ PROFILI = {
             ]
         }
     }
+,
+    'asd': {
+        'label': '⚽ ASD & Centro Estivo Multisport',
+        'ui': {'eventi': '📅 Tornei & Camp', 'scuole': '🏟️ Impianti & Società', 'altro': '📦 Stage & Amichevoli', 'bracc': '🎽 Kit & Braccialetti', 'med': '🏅 Medaglie & Trofei', 'ades': '🔖 Adesivi & Borracce', 'coppe': '🏆 Coppe FairPlay', 'mat': '⚽ Attrezzatura Sportiva'},
+        'dati': {
+            'rubrica': [{'id': 1, 'nome': 'Luca Fontana', 'ruolo': 'Direttore Centro Sportivo', 'telefono': '335 0004401', 'email': 'l.fontana@sportdemo.it', 'note': 'Campi calcio e palestra'}, {'id': 2, 'nome': 'Chiara Bellini', 'ruolo': 'Coordinatrice Istruttori', 'telefono': '335 0004402', 'email': 'c.bellini@sportdemo.it', 'note': 'Turni camp estivo'}],
+            'scuole': [{'id': 1, 'nome': 'Centro Sportivo Comunale Valgrigna', 'tipo': 'Impianto Sportivo', 'referente': 'Luca Fontana', 'telefono': '0364 000401', 'email': 'impianto@sportdemo.it'}],
+            'eventi': [{'id': 301, 'data': '2026-06-15', 'scuola_id': 1, 'foto': [{'file': 'demo_asd_1.png', 'didascalia': 'Attivita multisport al campo estivo', 'tag': ['camp', 'ragazzi']}, {'file': 'demo_asd_2.png', 'didascalia': 'Premiazione torneo giovanile', 'tag': ['torneo', 'premiazioni']}], 'iniziativa': 'Summer Sport Camp - Turno 1', 'numero_partecipanti': 65, 'braccialetti': 65, 'medaglie': 65, 'adesivi': 130, 'coppe': 4, 'voci_ricavi': [{'descrizione': 'Rette settimanali iscritti', 'importo': 5850}], 'voci_costi': [{'descrizione': 'Istruttori e servizio mensa', 'importo': 3450}]}],
+            'altro': [{'id': 1, 'data': '2026-07-04', 'titolo': 'Amichevole Genitori vs Figli & Grigliata ASD', 'luogo': 'Campo Principale', 'note': 'Serata conclusiva turno 2'}],
+            'stock': {'braccialetti': 255, 'medaglie': 155, 'adesivi': 270, 'coppe': 14},
+            'movimenti': {'braccialetti': [{'id': 1, 'data': '2026-05-01', 'tipo': 'carico', 'quantita': 320, 'prezzo_unitario': 0.50, 'motivo': 'Braccialetti gruppi camp'}], 'medaglie': [], 'adesivi': [], 'coppe': []},
+            'inventario': [{'id': 1, 'nome': 'Defibrillatore DAE + teca riscaldata', 'quantita': 2, 'valore_unitario': 1150.0, 'valore_totale': 2300.0, 'data_acquisto': '2025-09-10', 'stato': 'Operativo'}],
+            'entita': [{'id': 1, 'nome': 'Kit palloni calcio/volley, pettorine e conetti', 'categoria': 'Attrezzatura', 'quantita': 45, 'costo_unitario': 18.0, 'data_carico': '2026-04-10', 'condizione': 'Nuovo'}],
+            'entrate': [{'id': 1, 'data': '2026-06-15', 'tipo': 'evento', 'descrizione': 'Incasso Summer Sport Camp', 'importo': 5850.0}],
+            'uscite': [{'id': 1, 'data': '2026-05-15', 'descrizione': 'Tesseramenti assicurativi atleti CSI', 'importo': 920.0}],
+            'portafoglio': [{'id': 1, 'nome': 'Conto Corrente ASD', 'saldo': 6420.0}, {'id': 2, 'nome': 'Cassa Segreteria Campo', 'saldo': 540.0}],
+            'liste': [{'id': 1, 'titolo': 'Checklist Apertura Camp Estivo', 'voci': [{'testo': 'Verifica kit primo soccorso e ghiaccio spray', 'fatto': True}, {'testo': 'Stampa elenchi allergie e deleghe ritiro', 'fatto': False}]}],
+            'note_calendario': [{'id': 1, 'data': '2026-06-15', 'testo': 'Accoglienza famiglie ore 08:30 e consegna kit camp'}],
+            'postit': [{'id': 1, 'testo': 'Controllare scadenza elettrodi DAE prima del torneo', 'colore': '#bbf7d0'}],
+            'task': [
+                {'id': 1, 'titolo': 'Controllare scadenza certificati medici atleti', 'categoria': 'Segreteria', 'data_scadenza': '2026-06-10', 'priorita': 'Alta', 'stato': 'In corso'},
+                {'id': 2, 'titolo': 'Raccogliere deleghe ritiro minori e allergie', 'categoria': 'Camp Estivo', 'data_scadenza': '2026-06-12', 'priorita': 'Alta', 'stato': 'Da fare'},
+                {'id': 3, 'titolo': 'Testare batterie ed elettrodi Defibrillatore DAE', 'categoria': 'Sicurezza', 'data_scadenza': '2026-06-14', 'priorita': 'Alta', 'stato': 'Completato'}
+            ]
+        }
+    },
+    'scuola': {
+        'label': '🏫 Scuola & Istituto Comprensivo',
+        'ui': {'eventi': '📅 Progetti & Uscite', 'scuole': '🏫 Plessi & Classi', 'altro': '📦 Laboratori & PON', 'bracc': '🪪 Pass Uscite', 'med': '🏅 Attestati & Premi', 'ades': '🔖 Etichette & Stampe', 'coppe': '🏆 Targhe & Diplomi', 'mat': '📚 Dotazioni Didattiche'},
+        'dati': {
+            'rubrica': [{'id': 1, 'nome': 'Ins. Marta Colombo', 'ruolo': 'Referente Progetti PTOF', 'telefono': '339 0005501', 'email': 'm.colombo@istitutodemo.edu.it', 'note': 'Plesso Primaria'}, {'id': 2, 'nome': 'Prof. Davide Galli', 'ruolo': 'Coordinatore STEM & Sport', 'telefono': '339 0005502', 'email': 'd.galli@istitutodemo.edu.it', 'note': 'Secondaria I Grado'}],
+            'scuole': [{'id': 1, 'nome': 'Plesso Primaria "G. Rodari"', 'tipo': 'Scuola Primaria', 'referente': 'Ins. Marta Colombo', 'telefono': '0364 000501', 'email': 'rodari@istitutodemo.edu.it'}, {'id': 2, 'nome': 'Scuola Secondaria "A. Manzoni"', 'tipo': 'Scuola Media', 'referente': 'Prof. Davide Galli', 'telefono': '0364 000502', 'email': 'manzoni@istitutodemo.edu.it'}],
+            'eventi': [{'id': 401, 'data': '2026-05-19', 'scuola_id': 2, 'foto': [{'file': 'demo_scuola_1.png', 'didascalia': 'Olimpiadi di robotica e sport interclasse', 'tag': ['stem', 'olimpiadi']}, {'file': 'demo_scuola_2.png', 'didascalia': 'Laboratorio ambientale e giornata green', 'tag': ['ambiente', 'primaria']}], 'iniziativa': 'Olimpiadi Matematica, Robotica & Sport', 'numero_partecipanti': 210, 'braccialetti': 210, 'medaglie': 90, 'adesivi': 210, 'coppe': 9, 'voci_ricavi': [{'descrizione': 'Bando Regionale Scuole Attive', 'importo': 2500}], 'voci_costi': [{'descrizione': 'Kit robotica e pullman trasferimento', 'importo': 1500}]}],
+            'altro': [{'id': 1, 'data': '2026-05-29', 'titolo': 'Mostra Finale Laboratori PON & Musica', 'luogo': 'Aula Magna Istituto', 'note': 'Aperta alle famiglie dalle 16:30'}],
+            'stock': {'braccialetti': 150, 'medaglie': 110, 'adesivi': 310, 'coppe': 8},
+            'movimenti': {'braccialetti': [{'id': 1, 'data': '2026-01-20', 'tipo': 'carico', 'quantita': 360, 'prezzo_unitario': 0.35, 'motivo': 'Pass identificativi uscite didattiche'}], 'medaglie': [], 'adesivi': [], 'coppe': []},
+            'inventario': [{'id': 1, 'nome': 'Carrello ricarica + 24 Tablet didattici', 'quantita': 1, 'valore_unitario': 5400.0, 'valore_totale': 5400.0, 'data_acquisto': '2025-11-10', 'stato': 'Operativo'}],
+            'entita': [{'id': 1, 'nome': 'Pettorine alta visibilita gite + Kit robotica educativa', 'categoria': 'Sicurezza & Didattica', 'quantita': 80, 'costo_unitario': 7.5, 'data_carico': '2026-01-25', 'condizione': 'Nuovo'}],
+            'entrate': [{'id': 1, 'data': '2026-05-19', 'tipo': 'evento', 'descrizione': 'Finanziamento Bando Scuole Attive', 'importo': 2500.0}],
+            'uscite': [{'id': 1, 'data': '2026-03-05', 'descrizione': 'Rinnovo licenze software didattici', 'importo': 340.0}],
+            'portafoglio': [{'id': 1, 'nome': 'Fondo Progetti PTOF / Comitato Genitori', 'saldo': 3180.0}],
+            'liste': [{'id': 1, 'titolo': 'Checklist Uscita Didattica', 'voci': [{'testo': 'Raccolta moduli consenso firmati dai genitori', 'fatto': True}, {'testo': 'Consegna elenco alunni a compagnia pullman', 'fatto': False}]}],
+            'note_calendario': [{'id': 1, 'data': '2026-05-19', 'testo': 'Partenza pullman ore 08:45 dal piazzale del plesso'}],
+            'postit': [{'id': 1, 'testo': 'Stampare attestati partecipazione per le classi 3A e 3B', 'colore': '#ddd6fe'}],
+            'task': [
+                {'id': 1, 'titolo': 'Raccogliere autorizzazioni famiglie per uscita didattica', 'categoria': 'Segreteria', 'data_scadenza': '2026-05-12', 'priorita': 'Alta', 'stato': 'In corso'},
+                {'id': 2, 'titolo': 'Inviare elenco alunni per copertura assicurativa', 'categoria': 'Amministrazione', 'data_scadenza': '2026-05-14', 'priorita': 'Alta', 'stato': 'Da fare'},
+                {'id': 3, 'titolo': 'Preparare attestati e targhe classi vincitrici', 'categoria': 'Didattica', 'data_scadenza': '2026-05-18', 'priorita': 'Media', 'stato': 'Da fare'}
+            ]
+        }
+    }
 }
+
+@bp.before_app_request
+def _ensure_demo_bootstrap():
+    d = storage.get_dati()
+    if os.environ.get('VERCEL') and not d.get('profilo_demo_attivo'):
+        for k, v in copy.deepcopy(PROFILI['motoclub']['dati']).items():
+            d[k] = v
+        d['profilo_demo_attivo'] = 'motoclub'
+        d['giacenza_iniziale_impostata'] = True
+        d['import_excel_fatto'] = True
+        src_g = Path(__file__).resolve().parents[2] / 'static' / 'demo_gallery'
+        dst_g = DATA_DIR / 'uploads' / 'eventi'
+        dst_g.mkdir(parents=True, exist_ok=True)
+        if src_g.exists():
+            for f in src_g.glob('*.png'):
+                if not (dst_g / f.name).exists():
+                    shutil.copy2(f, dst_g / f.name)
+        storage.salva_dati(d, crea_backup=False)
 
 BACKUP_FILE = Path(__file__).resolve().parents[2] / 'dati_reali_backup.json'
 
