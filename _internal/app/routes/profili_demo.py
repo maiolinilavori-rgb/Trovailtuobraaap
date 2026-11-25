@@ -190,7 +190,7 @@ PROFILI = {
 def _ensure_demo_bootstrap():
     d = storage.get_dati()
     if os.environ.get('VERCEL') and not d.get('profilo_demo_attivo'):
-        for k, v in copy.deepcopy(PROFILI['motoclub']['dati']).items():
+        for k, v in _espandi_3x('motoclub', PROFILI['motoclub']['dati']).items():
             d[k] = v
         d['profilo_demo_attivo'] = 'motoclub'
         d['giacenza_iniziale_impostata'] = True
@@ -203,6 +203,48 @@ def _ensure_demo_bootstrap():
                 if not (dst_g / f.name).exists():
                     shutil.copy2(f, dst_g / f.name)
         storage.salva_dati(d, crea_backup=False)
+
+def _espandi_3x(pid, dati):
+    d = copy.deepcopy(dati)
+    scadenze_imminenti = ['2026-11-26', '2026-11-27', '2026-11-28', '2026-11-29', '2026-11-30', '2026-12-01']
+    for idx, t in enumerate(d.get('task', [])):
+        t['scadenza'] = scadenze_imminenti[idx % len(scadenze_imminenti)]
+        if idx < 4:
+            t['priorita'] = 'alta'
+            t['stato'] = 'da_fare' if idx % 2 == 0 else 'in_lavorazione'
+    extra_tasks = [
+        {'id': 101, 'titolo': 'Urgente: conferma fornitura e consegna materiali evento', 'categoria': 'generale', 'scadenza': '2026-11-26', 'priorita': 'alta', 'stato': 'da_fare', 'note': 'Scadenza domani mattina', 'referente': 'Coordinamento'},
+        {'id': 102, 'titolo': 'Verifica lotti braccialetti / pass e buste nominali', 'categoria': 'braccialetti', 'scadenza': '2026-11-27', 'priorita': 'alta', 'stato': 'in_lavorazione', 'note': 'Controllo numerazione sequenziale', 'referente': 'Logistica'},
+        {'id': 103, 'titolo': 'Controllo incisioni targhe, coppe e premi podi', 'categoria': 'coppe', 'scadenza': '2026-11-28', 'priorita': 'alta', 'stato': 'da_fare', 'note': 'Ritiro presso premiazioni', 'referente': 'Segreteria'},
+        {'id': 104, 'titolo': 'Stampa urgente locandine, adesivi e kit informativi', 'categoria': 'adesivi', 'scadenza': '2026-11-29', 'priorita': 'media', 'stato': 'da_fare', 'note': 'Bozza approvata', 'referente': 'Grafica'},
+        {'id': 105, 'titolo': 'Confezionamento medaglie / riconoscimenti partecipanti', 'categoria': 'medaglie', 'scadenza': '2026-11-30', 'priorita': 'media', 'stato': 'in_lavorazione', 'note': 'Pronti in scatole numerate', 'referente': 'Magazzino'},
+        {'id': 106, 'titolo': 'Allestimento buste gadgets e omaggi benvenuto', 'categoria': 'gadgets', 'scadenza': '2026-12-01', 'priorita': 'media', 'stato': 'da_fare', 'note': '150 kit completi', 'referente': 'Accoglienza'}
+    ]
+    d['task'] = d.get('task', []) + extra_tasks
+    base_ev = list(d.get('eventi', []))
+    mesi = [('2026-02-14', 'Edizione Invernale'), ('2026-03-21', 'Tappa Primavera'), ('2026-05-10', 'Speciale Maggio'), ('2026-06-21', 'Evento Estate'), ('2026-09-19', 'Rientro Autunno'), ('2026-10-24', 'Trofeo d Autunno'), ('2026-11-28', 'Speciale Novembre'), ('2026-12-12', 'Gran Gala Dicembre')]
+    for i, (dt, suff) in enumerate(mesi):
+        src = copy.deepcopy(base_ev[i % len(base_ev)])
+        src['id'] = 700 + i
+        src['data'] = dt
+        src['iniziativa'] = f"{src['iniziativa']} - {suff}"
+        src['numero_partecipanti'] = int(src.get('numero_partecipanti', 50) * (1 + (i % 3) * 0.25))
+        d['eventi'].append(src)
+    for sec, suf in [('rubrica', ' (Resp. Area)'), ('scuole', ' - Sede Distaccata'), ('altro', ' - Sessione Extra'), ('inventario', ' (Unità B)'), ('entita', ' - Scorta Magazzino'), ('entrate', ' - Seconda Tranche'), ('uscite', ' - Fornitura Integrativa'), ('postit', ' [Promemoria]'), ('note_calendario', ' - Conferma Orari'), ('liste', ' (Aggiornata)'), ('portafoglio', ' - Riserva')]:
+        orig = list(d.get(sec, []))
+        for rep in (1, 2):
+            for j, item in enumerate(orig):
+                cp = copy.deepcopy(item)
+                cp['id'] = 500 + rep * 50 + j
+                for k in ('nome', 'titolo', 'descrizione', 'testo'):
+                    if k in cp and isinstance(cp[k], str):
+                        cp[k] = f"{cp[k]}{suf} #{rep+1}"
+                if 'telefono' in cp:
+                    cp['telefono'] = f"33{rep} 009{rep}{j:02d}"
+                if 'email' in cp and '@' in cp['email']:
+                    cp['email'] = cp['email'].replace('@', f"{rep+1}@")
+                d.setdefault(sec, []).append(cp)
+    return d
 
 BACKUP_FILE = Path(__file__).resolve().parents[2] / 'dati_reali_backup.json'
 
@@ -238,7 +280,7 @@ def api_attiva_profilo():
         return jsonify({'success': False, 'error': 'Profilo non valido'}), 400
     if not d.get('profilo_demo_attivo') and not BACKUP_FILE.exists():
         BACKUP_FILE.write_text(json.dumps(d, ensure_ascii=False, indent=2), encoding='utf-8')
-    for k, v in copy.deepcopy(PROFILI[pid]['dati']).items():
+    for k, v in _espandi_3x(pid, PROFILI[pid]['dati']).items():
         d[k] = v
     d['profilo_demo_attivo'] = pid
     d['giacenza_iniziale_impostata'] = True
