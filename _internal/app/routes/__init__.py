@@ -1,7 +1,8 @@
-﻿"""Registrazione di tutti i blueprint."""
+"""Registrazione di tutti i blueprint."""
 
 from . import (
     check_system,
+    profili_demo,
     uscite,
     entrate,
     anno,
@@ -77,4 +78,5 @@ def registra_tutte(app):
         if hasattr(modulo, 'bp'):
             app.register_blueprint(modulo.bp)
     app.register_blueprint(check_system.bp)
+    app.register_blueprint(profili_demo.bp)
 
