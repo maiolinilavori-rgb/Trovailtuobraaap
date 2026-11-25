@@ -14,9 +14,10 @@ demo_dir.mkdir(parents=True, exist_ok=True)
 os.environ.setdefault("BRAAAP_DATA_DIR", str(demo_dir))
 os.environ.setdefault("BRAAAP_DEMO_MODE", "1")
 os.environ.setdefault("SECRET_KEY", "braaap-demo-vercel-secret-key-2026-fissa")
+os.environ.setdefault("BRAAAP_PASSWORD", "braaap2026")
 
 data_file = demo_dir / "braaap_data.json"
-if not data_file.exists():
+if True:
     demo_dati = {
         "scuole": [
             {"id": 1, "nome": "I.C. Valle Camonica - Plesso Braone", "tipo": "Scuola Primaria", "referente": "Prof.ssa Bianchi", "telefono": "0364 000001"},
@@ -51,7 +52,7 @@ if not data_file.exists():
         "task": [
             {"id": 1, "titolo": "Preparare kit gadget per tappa estiva", "categoria": "Magazzino", "data_scadenza": "2026-06-15", "priorita": "Alta", "stato": "Da fare"}
         ],
-        "wizard_completato": True, "config": {"nome_associazione": "Trova il tuo Braaap Demo"}, "rubrica": [], "postit": [], "note_calendario": [], "liste": [], "note_vocali": [], "portafoglio": []
+        "giacenza_iniziale_impostata": True, "giacenza_iniziale_data": "2026-02-10", "import_excel_fatto": True, "config": {"nome_associazione": "Trova il tuo Braaap Demo"}, "rubrica": [], "postit": [], "note_calendario": [], "liste": [], "note_vocali": [], "portafoglio": []
     }
     data_file.write_text(json.dumps(demo_dati, ensure_ascii=False, indent=2), encoding="utf-8")
 
